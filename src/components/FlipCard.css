@@ -1,0 +1,81 @@
+.flip-card {
+  perspective: 1000px;
+  cursor: pointer;
+  max-width: 360px;
+  width: 100%;
+  min-height: 480px;
+  margin: auto;
+  position: relative;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease-in-out;
+}
+
+.flip-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  backface-visibility: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* ✨ Front = NAVY w/ glow */
+.flip-card-front {
+  background-color: #0a2540;
+  color: white;
+}
+
+.flip-card-front h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.flip-card-front p {
+  font-style: italic;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.flip-card-front .click-text {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  animation: pulseSlow 3s ease-in-out infinite;
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Back = clean white */
+.flip-card-back {
+  background: white;
+  color: #0a2540;
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}

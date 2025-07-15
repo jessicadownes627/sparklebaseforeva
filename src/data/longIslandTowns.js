@@ -1,0 +1,42 @@
+// longIslandTowns.js
+export const longIslandTowns = [
+    "Port Jefferson",
+    "Greenport",
+    "Huntington",
+    "Smithtown",
+    "Ronkonkoma",
+    "Sayville",
+    "Patchogue",
+    "Riverhead",
+    "Montauk",
+    "Yaphank",
+    "East Hampton",
+    "Commack",
+    "Melville",
+    "West Babylon",
+    "Oceanside",
+    "Dix Hills",
+    "Northport", 
+    "East Northport",
+    "Lindenhurst", 
+    "Mount Sinai", 
+    "Montauk", 
+    "Southampton",
+    "Stony Brook",
+    "Babylon",
+    "Bay Shore",
+    "Islip",
+    "Hempstead",
+    "Garden City",
+    "Massapequa",
+    "Mineola",
+    "Great Neck",
+    "Long Beach",
+    "Oyster Bay",
+    "Rockville Centre",
+    "Freeport",
+    "Westbury"
+  ];
+  
+  export default longIslandTowns;
+  
