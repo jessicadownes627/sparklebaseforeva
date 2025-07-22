@@ -26,6 +26,34 @@ const longTerm = {
           mix: "Let each person choose one thing for the night: food, drink, or activity. No vetoes. See where it takes you."
         }
       },
+
+flexible: {
+  romantic: {
+    casual: "Pick up iced drinks from a local shop and take a slow walk somewhere calm — a pier, a park, even a shady street. Let the conversation flow without any pressure to impress.",
+    fancy: "Find a hidden garden patio or rooftop bar and order something fun and bubbly. Share a quiet toast to your shared history and let the summer air slow everything down.",
+    drinks: "Find a rooftop bar or garden patio with shade, great drinks, and no rush. Toast to your inside jokes, your weird summer dreams, and whatever you’d name your imaginary yacht. Let the afternoon feel like a story you’ll want to tell later — even if you just end up people-watching.",
+    mix: "Start somewhere familiar — your go-to cafe, a favorite bench — then flip a coin to decide your next move. Let spontaneity turn into surprise magic."
+  },
+  fun: {
+    casual: "Go to a retro arcade or board game cafe for a no-pressure afternoon hang. Keep score. Be ridiculous. Add milkshakes or slushies to seal the deal.",
+    fancy: "Dress up and hit a fancy dessert spot mid-afternoon — order the most over-the-top thing on the menu, take pictures, pretend you're critics.",
+    drinks: "Do a mini bar crawl with mocktails or cocktails — one drink, one snack, one silly challenge at each stop. Build your own rating system.",
+    mix: "Plan a silly scavenger hunt in your neighborhood or town — make up clues, dare each other, and don’t take it too seriously."
+  },
+  chill: {
+    casual: "Grab iced coffees and just sit somewhere quiet. The kind of date where you lean back, people-watch, and say things like 'that dog is definitely named Carl.'",
+    fancy: "Visit a bookstore, museum, or gallery with AC and soft lighting. Wander slowly. Share your favorite weird finds.",
+    drinks: "Pick a spot with giant iced teas, iced lattes, or smoothies. Stay awhile. Talk about nothing important and let the breeze do half the work.",
+    mix: "Bring a blanket, a speaker, and a cold drink to your favorite outdoor spot. Play music for each other and do absolutely nothing. That’s the point."
+  },
+  adventurous: {
+    casual: "Pick a direction and walk until you find something cool — a mural, a pop-up, a food truck you didn’t know was there. Document your discoveries.",
+    fancy: "Try a quirky day event like a tasting flight, local fair, or rooftop yoga. The goal? Something neither of you would normally pick.",
+    drinks: "Order the weirdest drink on the menu and pretend it’s your signature cocktail. Invent fake backstories and rate the garnish.",
+    mix: "Flip a coin to decide each step — drink, snack, destination. Keep flipping until you end up somewhere completely unexpected."
+  }
+},
+
       indoors: {
         romantic: {
           casual: "Cook something simple together, light a candle, and eat on the floor like it’s your first tiny apartment all over again.",

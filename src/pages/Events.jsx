@@ -97,6 +97,11 @@ const lowCostShuffled = [...lowCostIdeas].sort(() => 0.5 - Math.random()).slice(
   const [successMsg, setSuccessMsg] = useState(false);
   const [featuredPlaylists, setFeaturedPlaylists] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
+const [selectedStyle, setSelectedStyle] = useState("feminine");
+const cleanedOutfitStyle = ["Laid-back & Easy", "Confident & Sharp", "Statement Look"].includes(outfitStyle)
+  ? outfitStyle
+  : "Laid-back & Easy";
+
 
   const handleSave = async () => {
     if (!customPlaylistUrl) return;
@@ -176,64 +181,86 @@ const renderMysteryDateOption = () => {
 
 
 
-        {/* 🎴 Moved mystery ideas to their own FlipCard */}
-    <FlipCard
+{/* 🎴 Moved mystery ideas to their own FlipCard */}
+<FlipCard
   disableFlipOnBack={true}
   front={
     <div>
-      <h3 className="text-xl font-bold mb-3">More Custom Date Ideas ✨</h3>
+      <h3 className="text-xl font-bold mb-3">Custom Date Ideas ✨</h3>
       <p className="text-sm">Tap for other suggestions</p>
     </div>
   }
   back={
-  <div className="p-4 text-sm text-[#0a2540] text-center" onClick={(e) => e.stopPropagation()}>
-    <p className="font-medium mb-2">Not feeling the first idea?</p>
+    <div className="p-4 text-sm text-[#0a2540] text-center" onClick={(e) => e.stopPropagation()}>
+      <p className="font-medium mb-2">Try this for your date!</p>
 
-   <div className="flex gap-2 justify-center mb-4">
-  <button
-    onClick={() => setSelectedOption(1)}
-    className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-  >
-    Try Again
-  </button>
-  <button
-    onClick={() => setSelectedOption(3)}
-    className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-  >
-    Another Idea
-  </button>
-</div>
-
-
-    <div className="mt-3 text-sm italic text-[#0a2540]">
-      {renderMysteryDateOption()}
-    </div>
-
-    {/* 💡 Local events prompt */}
-    {city && (
-      <div className="mt-6 text-sm text-[#0a2540]">
-        <p className="mb-2 font-semibold">✨ Looking for something real-time?</p>
-        <p className="mb-3">
-          Explore what's happening in {city} right now — sometimes the best plans are unplanned.
-        </p>
-        <a
-          href={`https://www.meetup.com/find/?location=${city.replaceAll(" ", "-")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline text-indigo-600 hover:text-indigo-800 text-sm"
+      <div className="flex gap-2 justify-center mb-4">
+        <button
+          onClick={() => setSelectedOption(1)}
+          className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
         >
-          Browse events on Meetup.com →
-        </a>
-        <p className="text-xs italic text-gray-400 mt-1">
-          Not sponsored. Just a vibe check 🔍 Psst… Meetup.com uses your device’s location, not what you told us — If it doesn't match, update your location there.
-        </p>
+          A New Idea
+        </button>
+        <button
+          onClick={() => setSelectedOption(3)}
+          className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
+        >
+          Another Idea
+        </button>
       </div>
-    )}
-  </div>
-}
 
+      {/* 🧠 Curated Mystery Ideas */}
+      <div className="mt-3 text-sm italic text-[#0a2540]">
+        {selectedOption === 1 && (
+          <>
+            <p>
+              Pick a spot in {city || "your city"} you’ve both never been — food, drink, or random bookstore — and rate it like critics.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 italic">
+              Think {dateName || "your date"} would be into a surprise rating game?
+            </p>
+          </>
+        )}
+        {selectedOption === 3 && (
+          <>
+            <p>
+              Start with a drink somewhere calm — then flip a coin: heads = walk, tails = dessert. Let the randomness be the plan.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 italic">
+              You can blame it on the app later 😉
+            </p>
+          </>
+        )}
+        {!selectedOption && (
+          <p className="italic text-sm text-white/60">
+            Click a button above to reveal a different idea for tonight.
+          </p>
+        )}
+      </div>
+
+      {/* 💡 Local events prompt */}
+      {city && (
+        <div className="mt-6 text-sm text-[#0a2540]">
+          <p className="mb-2 font-semibold">✨ Looking for something real-time?</p>
+          <p className="mb-3">
+            Explore what's happening in {city} right now — sometimes the best plans are unplanned.
+          </p>
+          <a
+            href={`https://www.meetup.com/find/?location=${city.replaceAll(" ", "-")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-indigo-600 hover:text-indigo-800 text-sm"
+          >
+            Browse events on Meetup.com →
+          </a>
+          <p className="text-xs italic text-gray-400 mt-1">
+            Not sponsored. Just a vibe check 🔍 Psst… Meetup.com uses your device’s location, not what you told us — If it doesn't match, update your location there.
+          </p>
+        </div>
+      )}
+    </div>
+  }
 />
-
 
 
 
@@ -249,53 +276,68 @@ const renderMysteryDateOption = () => {
     </div>
   }
   back={
-    <div className="p-4 text-sm text-[#0a2540]">
-      <p className="font-semibold mb-2">The outfit vibe for this date is:</p>
-      <p className="text-lg mb-3">{outfitStyle}</p>
+    <div className="p-4 text-sm text-[#0a2540] space-y-4">
+      <p className="font-semibold text-center">
+        Style inspo based on your vibe: <span className="italic">{cleanedOutfitStyle}</span>
+      </p>
 
-      {outfitSuggestions[outfitStyle]?.slice(0, -1).map((s, i) => (
-        <p key={i}>• {s}</p>
-      ))}
+      {/* Style Toggle Buttons */}
+      <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+        {["feminine", "masculine", "neutral"].map((key) => (
+          <button
+            key={key}
+            onClick={() => setSelectedStyle(key)}
+            className={`px-3 py-1 rounded-full text-sm font-medium border ${
+              selectedStyle === key
+                ? "bg-[#0a2540] text-white"
+                : "bg-white text-[#0a2540] border-[#0a2540] hover:bg-gray-100"
+            }`}
+          >
+            {key === "feminine" && "🌸 Feminine"}
+            {key === "masculine" && "🧢 Masculine"}
+            {key === "neutral" && "🌈 Neutral"}
+          </button>
+        ))}
+      </div>
 
-      {outfitSuggestions[outfitStyle]?.length > 0 && (
-        <div className="mt-6 px-4 py-3 bg-gray-50 border-l-4 border-gray-300 rounded-xl shadow-inner">
-          <p className="text-center font-script text-indigo-700 text-lg">
-            {outfitSuggestions[outfitStyle][outfitSuggestions[outfitStyle].length - 1]}
-          </p>
-          <p className="text-[11px] text-center text-gray-400 mt-1 italic">
-            Inspired by your vibe. Styled with smart suggestions.
-          </p>
+      {/* Style Suggestions */}
+      <div className="text-left space-y-2">
+        {(outfitSuggestions[selectedStyle]?.[cleanedOutfitStyle] || []).map((suggestion, i) => (
+          <p key={i}>• {suggestion}</p>
+        ))}
+      </div>
 
-          {styleSuggestions[outfitStyle]?.energyTagline && (
-            <p className="text-xs text-center italic text-gray-500 mt-1">
-              {styleSuggestions[outfitStyle].energyTagline}
-            </p>
-          )}
+      {/* Optional tagline */}
+      {styleSuggestions[cleanedOutfitStyle]?.energyTagline && (
+        <p className="text-xs text-center italic text-gray-500 mt-2">
+          {styleSuggestions[cleanedOutfitStyle].energyTagline}
+        </p>
+      )}
 
-          {styleSuggestions[outfitStyle]?.links && (
-            <div className="mt-2 text-[11px] text-center space-y-1">
-              {styleSuggestions[outfitStyle].links.map(({ label, href }, i) => (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block underline text-indigo-500 hover:text-indigo-700"
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          )}
-
-          <p className="text-[10px] text-center text-gray-300 italic mt-1">
-            Flirty and legal, just how we like it 💋
-          </p>
+      {/* Optional Pinterest links */}
+      {styleSuggestions[cleanedOutfitStyle]?.links && (
+        <div className="mt-3 text-[11px] text-center space-y-1">
+          {styleSuggestions[cleanedOutfitStyle].links.map(({ label, href }, i) => (
+            <a
+              key={i}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block underline text-indigo-500 hover:text-indigo-700"
+            >
+              {label}
+            </a>
+          ))}
         </div>
       )}
+
+      <p className="text-[10px] text-center text-gray-400 italic mt-2">
+        {`Flirty and legal${styleSuggestions[cleanedOutfitStyle]?.links ? ', just how we like it 💋' : '.'}`}
+      </p>
     </div>
   }
 />
+
 
 
         <FlipCard

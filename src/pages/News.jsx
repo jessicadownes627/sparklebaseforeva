@@ -199,8 +199,9 @@ const News = () => {
     </ul>
     <h3 className="text-md font-semibold text-white mt-6 mb-2">🏆 Big Games Ahead</h3>
     <ul className="text-sm space-y-2">
-      <li>⚾ MLB All-Star Game — July 15, 2025 (Atlanta)</li>
       <li>🎾 US Open Tennis — Aug 25–Sept 7, 2025 (New York)</li>
+      <li>⛳ Ryder Cup — Sept 26–28, 2025 (Long Island)</li>
+      <li>⚾ World Series — Late October 2025 (Teams & Cities TBD)</li>
       <li>🏀 NBA All-Star Weekend — Feb 14–16, 2026 (San Francisco)</li>
       <li>🏈 Super Bowl LX — Feb 8, 2026 (Santa Clara)</li>
       <li>⚽ FIFA World Cup — June–July 2026 (USA, CAN, MEX)</li>
@@ -238,41 +239,41 @@ const News = () => {
   {/* Things We Love */}
   <div className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20">
     <h2 className="text-lg font-bold text-white mb-3">🌟 Things We Love This Week</h2>
-    <div className="mb-4">
-      <a
-        href="https://youtube.com/shorts/P0i-fXHNXXA?si=VvKV1w69Pqb7RJR-"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm font-medium text-indigo-300 underline"
-      >
-        🎥 Check This Out!
-      </a>
-      <ul className="list-disc list-inside text-xs text-white/80 mt-1 space-y-1">
-        <li>Musicians + real love = instant serotonin boost</li>
-        <li>Reminder: romance is cool again</li>
-        <li>Yungblud is everywhere these days. But THIS was epic.</li>
-      </ul>
-    </div>
+
+   <div>
+    <a
+      href="https://people.com/after-hiding-the-relationship-from-their-students-teachers-revealed-they-got-engaged-exclusive-11769783"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm font-medium text-indigo-300 underline"
+    >
+      💍 Teachers Surprise Class with Engagement Announcement — Viral TikTok
+    </a>
+    <ul className="list-disc list-inside text-xs text-white/80 mt-1 space-y-1">
+      <li>They kept their romance hidden from students and then→ surprise proposal</li>
+      <li>6.5 million TikTok views and major feel‑good energy</li>
+      <li>Perfect for a positive, real‑life romantic chat</li>
+    </ul>
+  </div>
+
+    {/* 📰 Trending Story */}
     <div>
       <a
-        href="https://www.huffpost.com/entry/relationship-the-bird-test-tiktok_l_657a07bae4b08d631f1663c0"
+        href="https://www.vice.com/en/article/summer-shading-is-the-worst-dating-trend-of-2025"
         target="_blank"
         rel="noopener noreferrer"
         className="text-sm font-medium text-indigo-300 underline"
       >
-        📰 The 'Bird Test' is Blowing Up...Again
+        📰 “Summer Shading” Is the Worst Dating Trend of 2025
       </a>
       <ul className="list-disc list-inside text-xs text-white/80 mt-1 space-y-1">
-        <li>It started as a meme — now it’s a relationship compass</li>
-        <li>Ask your date their Bird Test result 🐦</li>
-        <li>Some say it’s more accurate than astrology 😲</li>
+        <li>When “catching feelings” takes a summer nap 🌞</li>
+        <li>Silent? Vague texts? You might be getting summer-shaded</li>
+        <li>Timely & talk-worthy — perfect date convo starter</li>
       </ul>
     </div>
   </div>
-</section>
-
-
-
+</section> {/* ✅ This is the missing section close that fixes the error */}
 
 
 
