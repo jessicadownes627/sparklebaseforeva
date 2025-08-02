@@ -54,7 +54,7 @@ const Events = () => {
   } = userData;
 
   const vibeKey = dateVibe?.toLowerCase();
-  const safeFoodStyle = (foodStyle || "").toLowerCase(); // Always define before use
+  const safeFoodStyle = (foodStyle || "").toLowerCase();
 
   console.log("USER DATA:", userData);
   console.log("RELATIONSHIP:", relationshipStatus);
@@ -82,28 +82,25 @@ const Events = () => {
   const [randomHiddenGemList, setRandomHiddenGemList] = useState([]);
   const [randomLowCostList, setRandomLowCostList] = useState([]);
 
+  // Low Cost Ideas — randomize ONCE
   useEffect(() => {
-    const shuffleArray = (arr) => {
-      return [...arr].sort(() => 0.5 - Math.random());
-    };
+    if (Array.isArray(lowCostIdeas) && lowCostIdeas.length > 0) {
+      const shuffled = [...lowCostIdeas].sort(() => 0.5 - Math.random());
+      setRandomLowCostList(shuffled.slice(0, 3));
+    }
+  }, []);
 
-    // Shuffle and pick 2 classic date ideas
+  // Classic & Hidden Gems — randomize with city
+  useEffect(() => {
+    const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random());
     const classicRaw = Array.isArray(cityIdeasRaw)
       ? cityIdeasRaw
       : cityIdeasRaw
       ? [cityIdeasRaw]
       : [];
     setRandomClassicList(shuffleArray(classicRaw).slice(0, 2));
-
-    // Shuffle and pick 2 hidden gems
     setRandomHiddenGemList(shuffleArray(hiddenGemsRaw).slice(0, 2));
-
-    // Shuffle and pick 3 low cost ideas
-    setRandomLowCostList(shuffleArray(lowCostIdeas).slice(0, 3));
   }, [cityKey, cityIdeasRaw, hiddenGemsRaw]);
-
-  // Original random lowCostIdea is still usable if needed
-  const lowCostIdea = lowCostIdeas[Math.floor(Math.random() * lowCostIdeas.length)];
 
   const showLongIsland =
     cityKey === "Long Island, NY" ||
@@ -118,6 +115,26 @@ const Events = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState("feminine");
   const [friendsSpotlight, setFriendsSpotlight] = useState([]);
+  const [randomSpotlight, setRandomSpotlight] = useState(null);
+
+  // ⭐️ MOVE THESE TWO LINES **HERE**, BEFORE the useEffect that uses them!
+  const permanentSpotlight = friendsSpotlight.find((f) =>
+    f?.title?.toLowerCase().includes("talk more")
+  );
+  const rotatingSpotlights = friendsSpotlight.filter((f) =>
+    f?.title && f.title !== permanentSpotlight?.title
+  );
+
+  // Sets the rotating spotlight (random) whenever friendsSpotlight updates
+  useEffect(() => {
+    if (rotatingSpotlights.length > 0) {
+      setRandomSpotlight(
+        rotatingSpotlights[Math.floor(Math.random() * rotatingSpotlights.length)]
+      );
+    } else {
+      setRandomSpotlight(null);
+    }
+  }, [rotatingSpotlights]);
 
   const cleanedOutfitStyle = ["Laid-back & Easy", "Confident & Sharp", "Statement Look"].includes(outfitStyle)
     ? outfitStyle
@@ -162,19 +179,6 @@ const Events = () => {
         setFriendsSpotlight(fallbackFriendsSpotlight);
       });
   }, []);
-
-  // ✅ Spotlight logic from Google Sheets (with fallback)
-  const permanentSpotlight = friendsSpotlight.find((f) =>
-    f?.title?.toLowerCase().includes("talk more")
-  );
-
-  const rotatingSpotlights = friendsSpotlight.filter((f) =>
-    f?.title && f.title !== permanentSpotlight?.title
-  );
-
-  const randomSpotlight = rotatingSpotlights.length > 0
-    ? rotatingSpotlights[Math.floor(Math.random() * rotatingSpotlights.length)]
-    : null;
 
 
 
