@@ -1,65 +1,109 @@
 // src/data/cityNameAliases.js
+
 import { longIslandTowns } from "./longIslandTowns.js";
 
 const cityNameAliases = {
-  // NJ
-  "mt laurel": "Mount Laurel",
-  "jersey city": "Jersey City",
-  "hoboken": "Hoboken",
-  "camden": "Camden",
-  "newark": "Newark",
-  "rahway": "Rahway",
-  "paterson": "Paterson",
-  "plainfield": "Plainfield",
-  "montclair": "Montclair",
-  "edison": "Edison",
+  // Long Island & Special
+  "long island": "Long Island, NY",
+  "li": "Long Island, NY",
 
-  // NYC + Boroughs
-  "nyc": "New York",
-  "new york": "New York",
-  "new york city": "New York",
-  "brooklyn": "New York",
-
-  // Long Island
-  "long island": "Long Island",
-  "li": "Long Island",
-
-  // Other cities
- 
+  // NY + NJ aliases
   "new york": "New York, NY",
   "new york city": "New York, NY",
   "nyc": "New York, NY",
   "brooklyn": "New York, NY",
-  "boston": "Boston, MA",
-  "philadelphia": "Philadelphia, PA",
-  "washington": "Washington DC",
-  "washington dc": "Washington DC",
-  "miami": "Miami, FL",
-  "los angeles": "Los Angeles, CA",
-  "san francisco": "San Francisco, CA",
-  "seattle": "Seattle, WA",
-  "san diego": "San Diego, CA", 
+  "jersey city": "Jersey City, NJ",
+
+  // Mapped from your full master list:
+  "albuquerque": "Albuquerque, NM",
+  "anchorage": "Anchorage, AK",
+  "anaheim": "Anaheim, CA",
+  "arlington": "Arlington, TX",
+  "atlanta": "Atlanta, GA",
   "austin": "Austin, TX",
+  "bakersfield": "Bakersfield, CA",
+  "baltimore": "Baltimore, MD",
+  "baton rouge": "Baton Rouge, LA",
+  "boise": "Boise, ID",
+  "boston": "Boston, MA",
+  "chandler": "Chandler, AZ",
+  "chesapeake": "Chesapeake, VA",
+  "chicago": "Chicago, IL",
+  "cincinnati": "Cincinnati, OH",
+  "cleveland": "Cleveland, OH",
+  "colorado springs": "Colorado Springs, CO",
+  "columbus": "Columbus, OH",
+  "dallas": "Dallas, TX",
   "denver": "Denver, CO",
-  "portland": "Portland, OR",
+  "detroit": "Detroit, MI",
+  "durham": "Durham, NC",
+  "el paso": "El Paso, TX",
+  "fort wayne": "Fort Wayne, IN",
+  "fort worth": "Fort Worth, TX",
+  "fresno": "Fresno, CA",
+  "garland": "Garland, TX",
+  "gilbert": "Gilbert, AZ",
+  "glendale": "Glendale, AZ",
+  "greensboro": "Greensboro, NC",
+  "henderson": "Henderson, NV",
+  "hialeah": "Hialeah, FL",
+  "honolulu": "Honolulu, HI",
+  "houston": "Houston, TX",
+  "indianapolis": "Indianapolis, IN",
+  "irving": "Irving, TX",
+  "irvine": "Irvine, CA",
+  "kansas city": "Kansas City, MO",
   "las vegas": "Las Vegas, NV",
+  "lexington": "Lexington, KY",
+  "lincoln": "Lincoln, NE",
+  "little rock": "Little Rock, AR",
+  "long beach": "Long Beach, CA",
+  "louisville": "Louisville, KY",
+  "lubbock": "Lubbock, TX",
+  "madison": "Madison, WI",
+  "memphis": "Memphis, TN",
+  "mesa": "Mesa, AZ",
+  "miami": "Miami, FL",
+  "milwaukee": "Milwaukee, WI",
+  "minneapolis": "Minneapolis, MN",
   "nashville": "Nashville, TN",
   "new orleans": "New Orleans, LA",
-  "key west": "Key West, FL",
-  "charlotte": "Charlotte, NC",
-  "houston": "Houston, TX",
+  "norfolk": "Norfolk, VA",
+  "north las vegas": "North Las Vegas, NV",
+  "omaha": "Omaha, NE",
+  "oklahoma city": "Oklahoma City, OK",
   "orlando": "Orlando, FL",
-  "savannah": "Savannah, GA",
   "phoenix": "Phoenix, AZ",
-  "minneapolis": "Minneapolis, MN",
+  "pittsburgh": "Pittsburgh, PA",
+  "plano": "Plano, TX",
+  "portland": "Portland, OR",
+  "portland, me": "Portland, ME",
+  "raleigh": "Raleigh, NC",
+  "reno": "Reno, NV",
+  "richmond": "Richmond, VA",
+  "riverside": "Riverside, CA",
+  "sacramento": "Sacramento, CA",
   "salt lake city": "Salt Lake City, UT",
-  "scottsdale": "Scottsdale"
+  "san antonio": "San Antonio, TX",
+  "san francisco": "San Francisco, CA",
+  "san jose": "San Jose, CA",
+  "savannah": "Savannah, GA",
+  "scottsdale": "Scottsdale, AZ",
+  "seattle": "Seattle, WA",
+  "st. louis": "St. Louis, MO",
+  "stockton": "Stockton, CA",
+  "tucson": "Tucson, AZ",
+  "tulsa": "Tulsa, OK",
+  "virginia beach": "Virginia Beach, VA",
+  "washington": "Washington DC",
+  "washington dc": "Washington DC",
+  "wichita": "Wichita, KS",
+  "winston–salem": "Winston–Salem, NC"
 };
 
-// Map all Long Island towns to "Long Island"
+// 🧠 Add all Long Island towns as "Long Island, NY"
 longIslandTowns.forEach((town) => {
-  cityNameAliases[town.toLowerCase()] = "Long Island";
+  cityNameAliases[town.toLowerCase()] = "Long Island, NY";
 });
 
 export default cityNameAliases;
-

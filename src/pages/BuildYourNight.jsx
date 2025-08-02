@@ -88,7 +88,7 @@ const BuildYourNight = () => {
   };
 
   const handleFinish = () => {
-    const finalData = { ...userData, ...answers, city, state };
+const finalData = { ...userData, ...answers, city, state, energy };
     console.log("🧠 Final userData object to save:", finalData);
     setUserData(finalData);
     navigate("/events");

@@ -1,179 +1,199 @@
 const subtopicOptions = {
-  "Politics 🗳️": [
-    "Trump & Legal Drama",
-    "2026 Election Watch",
-    "Culture Wars & Court Battles"
-  ],
-  "True Crime 🔪": [
-    "Netflix Docs",
-    "Wrongful Convictions",
-    "High-Profile Trials"
-  ],
   "AI & Future Tech 🤖": [
     "ChatGPT & AI Tools",
-    "Robot Takeover Jokes",
-    "Ethics & Innovation"
-  ],
-  "Music 🎵": [
-    "Pop",
-    "Throwbacks & Nostalgia",
-    "Summer Anthems",
-    "Hot New Drops"
-  ],
-  "Dating & Relationships ❤️": [
-    "First Dates",
-    "Green Flags & Icks",
-    "Modern Love Rules"
-  ],
-  "Fashion 👗": [
-    "Trendy Looks",
-    "Streetwear vs. Designer",
-    "Outfits That Spark Opinions"
-  ],
-  "TV Shows 📺": [
-    "Reality TV",
-    "Finale Controversies",
-    "Guilty Pleasure Shows"
-  ],
-  "Sports Betting 🎲": [
-    "Big Game Picks",
-    "Wild Underdog Wins",
-    "Viral Betting Moments"
-  ],
-  "Food & Restaurants 🍝": [
-    "Trendy Restaurants",
-    "Food TikTok Faves",
-    "Overrated Dishes"
-  ],
-  "Travel ✈️": [
-    "Dream Destinations",
-    "Travel Horror Stories",
-    "Romantic Getaways"
-  ],
-  "Podcasts 🎧": [
-    "True Crime",
-    "Pop Culture & Comedy",
-    "Surprising Life Advice"
-  ],
-  "Environment & Climate 🌍": [
-    "Climate Politics",
-    "Weather Disasters",
-    "Eco-Friendly Trends"
-  ],
-  "Legal Drama ⚖️": [
-    "Celebrity Trials",
-    "Supreme Court Moves",
-    "Lawsuits in the Spotlight"
-  ],
-  "Basketball 🏀": [
-    "NBA Drama",
-    "Playoff Highlights",
-    "Trade Rumors"
-  ],
-  "Baseball ⚾": [
-    "MLB Highlights",
-    "Yankees & Mets Updates",
-    "Ballpark Culture"
-  ],
-  "Football 🏈": [
-    "Fantasy Football",
-    "NFL Offseason Buzz",
-    "College Football Energy"
-  ],
-  "Holiday Happenings 🎁": [
-    "Gift Ideas",
-    "Holiday Traditions",
-    "Seasonal Stress"
-  ],
-  "Book Buzz 📚": [
-    "BookTok Picks",
-    "Summer Reads",
-    "Books That Spark Debate"
+    "Ethics & Innovation",
+    "Robot Takeover Jokes"
   ],
   "Art & Museums 🖼️": [
     "Controversial Art",
     "Gallery Openings",
     "TikTok Goes to the Museum"
   ],
-  "Space & UFOs 🛸": [
-    "Aliens & Conspiracies",
-    "NASA & Private Space",
-    "Would You Go to Mars?"
+  "Award Shows & Red Carpets 🎭": [
+    "Award Snubs",
+    "Memorable Speeches",
+    "Red Carpet Looks"
   ],
-  "Streaming & Reality 💅": [
-    "Netflix Originals",
-    "Reality TV Meltdowns",
-    "Docuseries That Hook You"
+  "Baseball ⚾": [
+    "Ballpark Culture",
+    "MLB Highlights",
+    "Yankees & Mets Updates"
+  ],
+  "Basketball 🏀": [
+    "NBA Drama",
+    "Playoff Highlights",
+    "Trade Rumors"
+  ],
+  "Book Buzz 📚": [
+    "BookTok Picks",
+    "Books That Spark Debate",
+    "Summer Reads"
+  ],
+  "Business & Money 💼": [
+    "Corporate Culture Shifts",
+    "Layoffs & Hiring Trends",
+    "Market Mayhem"
   ],
   "Celebrity News 🌟": [
     "Breakups & Hookups",
-    "Style Transformations",
-    "Messy Interviews"
+    "Messy Interviews",
+    "Style Transformations"
   ],
-  "Festivals 🎪": [
-    "Coachella & Big Names",
-    "Festival Fails",
-    "Fashion from the Field"
+  "College Sports 🎓": [
+    "March Madness",
+    "Players to Watch",
+    "Rivalry Games"
   ],
   "Concert Tours 🎤": [
     "Pop Tours",
     "Tour Ticket Chaos",
     "Who’s Worth Seeing Live"
   ],
-  "Shopping 🛍️": [
-    "Sustainable Fashion",
-    "Best Purchases",
-    "Impulse Buys That Hit"
+  "Dating & Relationships ❤️": [
+    "First Dates",
+    "Green Flags & Icks",
+    "Modern Love Rules"
   ],
-  "Tech & Gadgets 💻": [
-    "Smartphones & Devices",
-    "Apps That Change the Game",
-    "Wearables & Wellness Tech"
+  "Environment & Climate 🌍": [
+    "Climate Politics",
+    "Eco-Friendly Trends",
+    "Weather Disasters"
   ],
-  "Gaming 🎮": [
-    "Cozy / Indie Games",
-    "Top Streamers",
-    "Gaming Nostalgia"
+  "Fashion 👗": [
+    "Outfits That Spark Opinions",
+    "Streetwear vs. Designer",
+    "Trendy Looks"
   ],
-  "Olympics 🏅": [
-    "Olympic Highlights",
-    "Gold Medal Moments",
-    "Events We All Watch"
-  ],
-  "Hockey 🏒": [
-    "Stanley Cup",
-    "Famous Fights",
-    "Hometown Heroes"
-  ],
-  "College Sports 🎓": [
-    "March Madness",
-    "Rivalry Games",
-    "Players to Watch"
-  ],
-  "Golf ⛳": [
-    "Major Tournaments",
-    "Player Drama",
-    "Golf as a Vibe"
-  ],
-  "Talk of the Country 🇺🇸": [
-    "Trending U.S. Topics",
-    "Cultural Flashpoints",
-    "What Everyone’s Arguing About"
-  ],
-  "Indie Films 🎬": [
-    "Festival Winners",
-    "A24 Vibes",
-    "Underrated Gems"
-  ],
-  "Award Shows & Red Carpets 🎭": [
-    "Red Carpet Looks",
-    "Award Snubs",
-    "Memorable Speeches"
+  "Festivals 🎪": [
+    "Coachella & Big Names",
+    "Fashion from the Field",
+    "Festival Fails"
   ],
   "Film 🎬": [
     "Blockbusters",
-    "Sequels That Work",
-    "Movie Theaters vs. Streaming"
+    "Movie Theaters vs. Streaming",
+    "Sequels That Work"
+  ],
+  "Food & Restaurants 🍝": [
+    "Food TikTok Faves",
+    "Overrated Dishes",
+    "Trendy Restaurants"
+  ],
+  "Football 🏈": [
+    "College Football Energy",
+    "Fantasy Football",
+    "NFL Offseason Buzz"
+  ],
+  "Gaming 🎮": [
+    "Cozy / Indie Games",
+    "Gaming Nostalgia",
+    "Top Streamers"
+  ],
+  "Golf ⛳": [
+    "Golf as a Vibe",
+    "Major Tournaments",
+    "Player Drama"
+  ],
+  "Health & Fitness 🧘": [
+    "Controversial Diets",
+    "GymTok & Challenges",
+    "Wellness Trends"
+  ],
+  "Hockey 🏒": [
+    "Famous Fights",
+    "Hometown Heroes",
+    "Stanley Cup"
+  ],
+  "Holiday Happenings 🎁": [
+    "Gift Ideas",
+    "Holiday Traditions",
+    "Seasonal Stress"
+  ],
+  "Indie Films 🎬": [
+    "A24 Vibes",
+    "Festival Winners",
+    "Underrated Gems"
+  ],
+  "Legal Drama ⚖️": [
+    "Celebrity Trials",
+    "Lawsuits in the Spotlight",
+    "Supreme Court Moves"
+  ],
+  "Major Weather Events ⛈️": [
+    "Heatwave Headlines",
+    "Storm Season",
+    "Weather That Stops Plans"
+  ],
+  "Music 🎵": [
+    "Hot New Drops",
+    "Pop",
+    "Summer Anthems",
+    "Throwbacks & Nostalgia"
+  ],
+  "Olympics 🏅": [
+    "Events We All Watch",
+    "Gold Medal Moments",
+    "Olympic Highlights"
+  ],
+  "Podcasts 🎧": [
+    "Pop Culture & Comedy",
+    "Surprising Life Advice",
+    "True Crime"
+  ],
+  "Politics 🗳️": [
+    "2026 Election Watch",
+    "Culture Wars & Court Battles",
+    "Trump & Legal Drama"
+  ],
+  "Shopping 🛍️": [
+    "Best Purchases",
+    "Impulse Buys That Hit",
+    "Sustainable Fashion"
+  ],
+  "Space & UFOs 🛸": [
+    "Alien Conspiracies",
+    "NASA & SpaceX Updates",
+    "Would You Go to Mars?"
+  ],
+  "Sports Betting 🎲": [
+    "Big Game Picks",
+    "Viral Betting Moments",
+    "Wild Underdog Wins"
+  ],
+  "Streaming & Reality 💅": [
+    "Docuseries That Hook You",
+    "Netflix Originals",
+    "Reality TV Meltdowns"
+  ],
+  "TV Shows 📺": [
+    "Finale Controversies",
+    "Guilty Pleasure Shows",
+    "Reality TV"
+  ],
+  "Talk of the Country 🇺🇸": [
+    "Cultural Flashpoints",
+    "Trending U.S. Topics",
+    "What Everyone’s Arguing About"
+  ],
+  "Tech & Gadgets 💻": [
+    "Apps That Change the Game",
+    "Smartphones & Devices",
+    "Wearables & Wellness Tech"
+  ],
+  "Travel ✈️": [
+    "Dream Destinations",
+    "Romantic Getaways",
+    "Travel Horror Stories"
+  ],
+  "Trending Events 🎉": [
+    "Big City Moments",
+    "Small Town Magic",
+    "What's Happening Near You?"
+  ],
+  "True Crime 🔪": [
+    "High-Profile Trials",
+    "Netflix Docs",
+    "Wrongful Convictions"
   ],
   "Viral & Memes 📱": [
     "TikTok Trends",
@@ -181,15 +201,11 @@ const subtopicOptions = {
     "What’s Blowing Up This Week"
   ],
   "Wildcard 🃏": [
-    "Unexpected News",
+    "Debates That Divide the Table",
     "Hot Takes",
-    "Debates That Divide the Table"
-  ],
-  "Major Weather Events ⛈️": [
-    "Storm Season",
-    "Heatwave Headlines",
-    "Weather That Stops Plans"
+    "Unexpected News"
   ]
 };
 
 export default subtopicOptions;
+

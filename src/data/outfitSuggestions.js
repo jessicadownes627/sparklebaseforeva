@@ -26,7 +26,7 @@ const outfitSuggestions = {
       "Breathable tee or tank with drawstring shorts or joggers",
       "Cool sneakers or slide sandals that can go anywhere",
       "Feels chill, but still pulled together",
-      "That shirt you always get compliments on? Yeah, toss that on."
+      "That shirt you always get compliments on? Yeah, put that on."
     ],
     "Confident & Sharp": [
       "Short-sleeve button-up or fitted polo with clean shorts",

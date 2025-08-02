@@ -1,4 +1,4 @@
-// ✅ Events.jsx — restored curated card and moved mystery options to new FlipCard
+// ✅ Events.jsx — cleaned up version with fallback and Google Sheets
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext.jsx";
@@ -6,11 +6,9 @@ import PageHeader from "../components/PageHeader";
 import curatedDatePlans from "../data/curatedDatePlans";
 import playlists from "../data/appleMusicPlaylists";
 import appleCityPlaylists from "../data/appleCityPlaylists";
-import friendsSpotlight from "../data/friendsSpotlight";
 import cityDateIdeas from "../data/cityDateIdeas";
 import starterCityDateIdeas from "../data/starterCityDateIdeas";
 import hiddenGemIdeas from "../data/hiddenGemIdeas";
-import energyThemes from "../data/energyThemes";
 import starterHiddenGemIdeas from "../data/starterHiddenGemIdeas";
 import lowCostIdeas from "../data/lowCostIdeas";
 import outfitSuggestions from "../data/outfitSuggestions.js";
@@ -22,6 +20,12 @@ import FlipCard from "../components/FlipCard";
 import getWeatherTone from "../utils/getWeatherTone";
 import CuratedDateCard from "../components/CuratedDateCard";
 import confetti from "canvas-confetti";
+import { fetchLongIslandMusic } from "../utils/fetchLongIslandMusic";
+import LongIslandMusicFlipCard from "../components/LongIslandMusicFlipCard";
+import energyThemes from "../data/energyThemes";
+import fallbackFriendsSpotlight from "../data/fallbackFriendsSpotlight.js";
+import { fetchFriendsSpotlightFromSheet } from "../utils/fetchFriendsSpotlightFromSheet";
+import { db } from "../firebase";
 import {
   addDoc,
   collection,
@@ -31,7 +35,6 @@ import {
   limit,
   onSnapshot
 } from "firebase/firestore";
-import { db } from "../firebase";
 
 const Events = () => {
   const navigate = useNavigate();
@@ -50,58 +53,75 @@ const Events = () => {
     energy = "Dreamy ✨",
   } = userData;
 
-const vibe = userData.energy; // "Dreamy ✨", etc.
-const formattedCity = userData.city?.toLowerCase().trim();
-
-
   const vibeKey = dateVibe?.toLowerCase();
+  const safeFoodStyle = (foodStyle || "").toLowerCase(); // Always define before use
+
+  console.log("USER DATA:", userData);
+  console.log("RELATIONSHIP:", relationshipStatus);
+  console.log("TIME OF DAY:", timeOfDay);
+  console.log("DATE VIBE:", dateVibe);
+  console.log("FOOD STYLE:", safeFoodStyle);
+  console.log("FOUND PLAN:", curatedDatePlans?.[relationshipStatus]?.[timeOfDay]?.[vibeKey]?.[safeFoodStyle]);
+
   const curatedPlan =
-    curatedDatePlans?.[relationshipStatus]?.[timeOfDay]?.[locationType]?.[vibeKey]?.[foodStyle] || null;
+    curatedDatePlans?.[relationshipStatus]?.[timeOfDay]?.[vibeKey]?.[safeFoodStyle] || null;
 
   const theme = energyThemes?.[energy];
   const playlist = playlists?.[energy];
+  const rawCity = city?.trim().toLowerCase();
+  const normalizedCity = cityNameAliases[rawCity] || city?.trim();
+  const cityKey = normalizedCity;
+  const cityPlaylist = appleCityPlaylists?.[cityKey];
+  const finalDateIdeas = { ...starterCityDateIdeas, ...cityDateIdeas };
+  const finalHiddenGems = { ...starterHiddenGemIdeas, ...hiddenGemIdeas };
+  const cityIdeasRaw = finalDateIdeas?.[cityKey] || [];
+  const hiddenGemsRaw = finalHiddenGems?.[cityKey] || [];
 
-const rawCity = city?.trim().toLowerCase();
-const normalizedCity = cityNameAliases[rawCity] || city?.trim();
-const cityKey = normalizedCity; // ✅ use clean, matched key
+  // --- NEW STATE FOR RANDOM PICKED LISTS ---
+  const [randomClassicList, setRandomClassicList] = useState([]);
+  const [randomHiddenGemList, setRandomHiddenGemList] = useState([]);
+  const [randomLowCostList, setRandomLowCostList] = useState([]);
 
+  useEffect(() => {
+    const shuffleArray = (arr) => {
+      return [...arr].sort(() => 0.5 - Math.random());
+    };
 
+    // Shuffle and pick 2 classic date ideas
+    const classicRaw = Array.isArray(cityIdeasRaw)
+      ? cityIdeasRaw
+      : cityIdeasRaw
+      ? [cityIdeasRaw]
+      : [];
+    setRandomClassicList(shuffleArray(classicRaw).slice(0, 2));
 
-  console.log("✅ cityKey:", cityKey);
+    // Shuffle and pick 2 hidden gems
+    setRandomHiddenGemList(shuffleArray(hiddenGemsRaw).slice(0, 2));
 
-const cityPlaylist = appleCityPlaylists?.[cityKey];
-const finalDateIdeas = { ...starterCityDateIdeas, ...cityDateIdeas };
-const finalHiddenGems = { ...starterHiddenGemIdeas, ...hiddenGemIdeas };
-const cityIdeasRaw = finalDateIdeas?.[cityKey] || [];
-const classicList = Array.isArray(cityIdeasRaw)
-  ? cityIdeasRaw.slice(0, 2)
-  : cityIdeasRaw
-  ? [cityIdeasRaw]
-  : [];
+    // Shuffle and pick 3 low cost ideas
+    setRandomLowCostList(shuffleArray(lowCostIdeas).slice(0, 3));
+  }, [cityKey, cityIdeasRaw, hiddenGemsRaw]);
 
-const hiddenGemsRaw = finalHiddenGems?.[cityKey] || [];
-const hiddenGemList = hiddenGemsRaw.slice(0, 2);
+  // Original random lowCostIdea is still usable if needed
   const lowCostIdea = lowCostIdeas[Math.floor(Math.random() * lowCostIdeas.length)];
-const lowCostShuffled = [...lowCostIdeas].sort(() => 0.5 - Math.random()).slice(0, 3);
 
   const showLongIsland =
     cityKey === "Long Island, NY" ||
-    longIslandTowns.some(town => normalizedCity.toLowerCase().includes(town.toLowerCase()));
-
-  const permanentSpotlight = friendsSpotlight.find(f => f.title.includes("Talk More"));
-  const rotatingSpotlights = friendsSpotlight.filter(f => f !== permanentSpotlight);
-  const randomSpotlight = rotatingSpotlights[Math.floor(Math.random() * rotatingSpotlights.length)];
+    longIslandTowns.some(town =>
+      normalizedCity.toLowerCase().includes(town.toLowerCase())
+    );
   const weatherVibe = getWeatherTone(city, state);
 
   const [customPlaylistUrl, setCustomPlaylistUrl] = useState("");
   const [successMsg, setSuccessMsg] = useState(false);
   const [featuredPlaylists, setFeaturedPlaylists] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
-const [selectedStyle, setSelectedStyle] = useState("feminine");
-const cleanedOutfitStyle = ["Laid-back & Easy", "Confident & Sharp", "Statement Look"].includes(outfitStyle)
-  ? outfitStyle
-  : "Laid-back & Easy";
+  const [selectedStyle, setSelectedStyle] = useState("feminine");
+  const [friendsSpotlight, setFriendsSpotlight] = useState([]);
 
+  const cleanedOutfitStyle = ["Laid-back & Easy", "Confident & Sharp", "Statement Look"].includes(outfitStyle)
+    ? outfitStyle
+    : "Laid-back & Easy";
 
   const handleSave = async () => {
     if (!customPlaylistUrl) return;
@@ -129,34 +149,32 @@ const cleanedOutfitStyle = ["Laid-back & Easy", "Confident & Sharp", "Statement 
     return () => unsubscribe();
   }, []);
 
-const renderMysteryDateOption = () => {
-  let idea = "";
+  useEffect(() => {
+    fetchFriendsSpotlightFromSheet()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setFriendsSpotlight(data);
+        } else {
+          setFriendsSpotlight(fallbackFriendsSpotlight);
+        }
+      })
+      .catch(() => {
+        setFriendsSpotlight(fallbackFriendsSpotlight);
+      });
+  }, []);
 
-  if (selectedOption === 1) {
-    idea = city
-      ? `Check out something different in ${city}.`
-      : "Check out something different nearby.";
-  } else if (selectedOption === 3) {
-    idea = lowCostIdea || "Pick a free museum, sunset spot, or picnic park.";
-  } else {
-    return (
-      <p className="italic text-sm text-white/60">
-        Click a button above to reveal a different idea for tonight.
-      </p>
-    );
-  }
-
-  return (
-    <>
-      <p className="italic break-words max-w-full">{idea}</p>
-      <p className="text-xs text-gray-500 mt-2">
-        Do you think {dateName} would be into this? 👀
-      </p>
-    </>
+  // ✅ Spotlight logic from Google Sheets (with fallback)
+  const permanentSpotlight = friendsSpotlight.find((f) =>
+    f?.title?.toLowerCase().includes("talk more")
   );
-};
 
+  const rotatingSpotlights = friendsSpotlight.filter((f) =>
+    f?.title && f.title !== permanentSpotlight?.title
+  );
 
+  const randomSpotlight = rotatingSpotlights.length > 0
+    ? rotatingSpotlights[Math.floor(Math.random() * rotatingSpotlights.length)]
+    : null;
 
 
 
@@ -172,92 +190,104 @@ const renderMysteryDateOption = () => {
 
       <div className="flex flex-wrap justify-center gap-6 mb-12">
         {/* ✅ Restored original curated date FlipCard */}
-        <FlipCard
-          front={<div><h3 className="text-xl font-bold mb-3">Your Personalized Plan ✨</h3><p className="text-sm">Click to reveal your curated date idea!</p></div>}
-          back={<CuratedDateCard userName={userName} dateName={dateName} relationshipStatus={relationshipStatus} timeOfDay={timeOfDay} dateVibe={dateVibe} foodStyle={foodStyle} locationType={locationType} nightType="classic" planText={curatedPlan} />}
-        />
-
-
+      <FlipCard
+  front={
+    <div>
+      <h3 className="text-xl font-bold mb-3">✨ Your Personalized Plan ✨</h3>
+      <p className="text-sm">Click to reveal your curated date idea!</p>
+    </div>
+  }
+  back={
+    <CuratedDateCard
+      userName={userName}
+      dateName={dateName}
+      relationshipStatus={relationshipStatus}
+      timeOfDay={timeOfDay}
+      dateVibe={dateVibe}
+      foodStyle={foodStyle}
+      nightType="classic"
+      planText={curatedPlan}
+    />
+  }
+/>
 
 
 
 {/* 🎴 Moved mystery ideas to their own FlipCard */}
 <FlipCard
   disableFlipOnBack={true}
-  front={
-    <div>
-      <h3 className="text-xl font-bold mb-3">Custom Date Ideas ✨</h3>
-      <p className="text-sm">Tap for other suggestions</p>
-    </div>
-  }
+front={
+  <div className="text-center space-y-2 py-3">
+    <h3 className="text-xl font-bold mb-1 text-white">Shake it Up! 🎲</h3>
+    <p className="italic text-base text-indigo-300">Roll with it and see where this takes you!</p>
+  </div>
+}
+
   back={
-    <div className="p-4 text-sm text-[#0a2540] text-center" onClick={(e) => e.stopPropagation()}>
-      <p className="font-medium mb-2">Try this for your date!</p>
+    <div className="p-6 flex flex-col items-center space-y-6">
+  <div className="w-full flex justify-center gap-2 md:gap-4">
+  <button
+    onClick={() => setSelectedOption(1)}
+    className={`px-4 py-2 rounded-full text-base md:text-lg font-bold shadow transition transform hover:scale-105 active:scale-95 ${
+      selectedOption === 1
+        ? "bg-gradient-to-r from-pink-500 to-yellow-400 text-white"
+        : "bg-gradient-to-r from-indigo-300 to-pink-300 text-[#0a2540]"
+    }`}
+  >
+    🎉 New Adventure
+  </button>
+  <button
+    onClick={() => setSelectedOption(3)}
+    className={`px-4 py-2 rounded-full text-base md:text-lg font-bold shadow transition transform hover:scale-105 active:scale-95 ${
+      selectedOption === 3
+        ? "bg-gradient-to-r from-yellow-400 to-pink-500 text-white"
+        : "bg-gradient-to-r from-indigo-300 to-pink-300 text-[#0a2540]"
+    }`}
+  >
+    🔮 Surprise Me
+  </button>
+</div>
 
-      <div className="flex gap-2 justify-center mb-4">
-        <button
-          onClick={() => setSelectedOption(1)}
-          className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-        >
-          A New Idea
-        </button>
-        <button
-          onClick={() => setSelectedOption(3)}
-          className="bg-white text-[#0a2540] px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-        >
-          Another Idea
-        </button>
-      </div>
-
-      {/* 🧠 Curated Mystery Ideas */}
-      <div className="mt-3 text-sm italic text-[#0a2540]">
+      <div className="mt-4 italic text-[#0a2540] min-h-[48px]">
         {selectedOption === 1 && (
           <>
             <p>
-              Pick a spot in {city || "your city"} you’ve both never been — food, drink, or random bookstore — and rate it like critics.
+              Go to a totally random spot in {city || "your city"} — the more unexpected, the better.
             </p>
-            <p className="text-xs text-gray-500 mt-2 italic">
-              Think {dateName || "your date"} would be into a surprise rating game?
-            </p>
+            <p className="text-xs text-pink-700 mt-1">Bonus: Review it like you’re food critics on a secret mission!</p>
           </>
         )}
         {selectedOption === 3 && (
           <>
             <p>
-              Start with a drink somewhere calm — then flip a coin: heads = walk, tails = dessert. Let the randomness be the plan.
+              Let a coin flip decide your night: heads = new bar, tails = spontaneous dessert run.
             </p>
-            <p className="text-xs text-gray-500 mt-2 italic">
-              You can blame it on the app later 😉
-            </p>
+            <p className="text-xs text-pink-700 mt-1">No second guessing, just go!</p>
           </>
         )}
         {!selectedOption && (
-          <p className="italic text-sm text-white/60">
-            Click a button above to reveal a different idea for tonight.
+          <p className="text-indigo-400">
+            Not sure what to do? Tap a button and roll the dice!
           </p>
         )}
       </div>
-
-      {/* 💡 Local events prompt */}
-      {city && (
-        <div className="mt-6 text-sm text-[#0a2540]">
-          <p className="mb-2 font-semibold">✨ Looking for something real-time?</p>
-          <p className="mb-3">
-            Explore what's happening in {city} right now — sometimes the best plans are unplanned.
-          </p>
-          <a
-            href={`https://www.meetup.com/find/?location=${city.replaceAll(" ", "-")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline text-indigo-600 hover:text-indigo-800 text-sm"
-          >
-            Browse events on Meetup.com →
-          </a>
-          <p className="text-xs italic text-gray-400 mt-1">
-            Not sponsored. Just a vibe check 🔍 Psst… Meetup.com uses your device’s location, not what you told us — If it doesn't match, update your location there.
-          </p>
-        </div>
-      )}
+      <div className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-indigo-50 to-pink-50 rounded-xl border border-indigo-100 text-center">
+        <p className="font-semibold text-indigo-900 mb-1">✨ Feeling spontaneous?</p>
+        <p className="text-sm text-[#0a2540]">
+          Explore what’s actually happening in {city || "your city"} tonight. Sometimes the best memories are unplanned.
+        </p>
+        <a
+          href={`https://www.meetup.com/find/?location=${city.replaceAll(" ", "-")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 block font-bold text-pink-600 hover:text-indigo-600 underline"
+        >
+          🔗 Browse Meetup events →
+        </a>
+        <p className="text-[11px] text-gray-400 italic mt-2">
+          Not sponsored. Just a vibe check. Results may be wilder than expected.
+        </p>
+      </div>
     </div>
   }
 />
@@ -295,7 +325,7 @@ const renderMysteryDateOption = () => {
           >
             {key === "feminine" && "🌸 Feminine"}
             {key === "masculine" && "🧢 Masculine"}
-            {key === "neutral" && "🌈 Neutral"}
+            {key === "neutral" && "🌟 Neutral"}
           </button>
         ))}
       </div>
@@ -339,48 +369,57 @@ const renderMysteryDateOption = () => {
 />
 
 
-
-        <FlipCard
-  front={
-    <div className="text-center p-4">
-      <h3 className="text-xl font-bold mb-2"> Talk More Tonight's Playlist 🎶</h3>
-      <p className="text-sm text-white/80">Ready for some good tunes?</p>
-    </div>
-  }
-back={
-  <div className="p-6 rounded-xl text-white bg-gradient-to-br from-pink-600 via-purple-500 to-indigo-500 shadow-lg space-y-5 text-center">
-    <h4 className="text-2xl font-bold">{playlist.title}</h4>
-    <p className="text-sm italic">
-      Here's the perfect soundtrack to match your {energy.toLowerCase()} energy with {dateName}.
-    </p>
-    <a
-      href={playlist.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block mt-2 bg-white text-pink-600 font-semibold px-6 py-2 rounded-full shadow hover:bg-pink-100 transition"
-    >
-      🎵 Open Vibe Playlist
-    </a>
-
-    {cityPlaylist && (
-      <>
-        <div className="border-t border-white/30 my-3" />
+{playlist?.title && playlist?.url ? (
+  <FlipCard
+    front={
+      <div className="text-center p-4">
+        <h3 className="text-xl font-bold mb-2">TMT's Playlists 🎶</h3>
+        <p className="text-sm text-white/80">Ready for some good tunes?</p>
+      </div>
+    }
+    back={
+      <div className="p-6 rounded-xl text-white bg-gradient-to-br from-pink-600 via-purple-500 to-indigo-500 shadow-lg space-y-5 text-center">
+        <h4 className="text-2xl font-bold">{playlist.title}</h4>
         <p className="text-sm italic">
-          Oh — and since you're out in {city}, here's Apple’s Top 25 for your city. Enjoy, {userName}! 💫
+          Here's the perfect soundtrack to match your {energy?.toLowerCase()} energy with {dateName}.
         </p>
         <a
-          href={cityPlaylist.url}
+          href={playlist.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-white text-indigo-600 font-semibold px-6 py-2 rounded-full shadow hover:bg-indigo-100 transition"
+          className="inline-block mt-2 bg-white text-pink-600 font-semibold px-6 py-2 rounded-full shadow hover:bg-pink-100 transition"
         >
-          📍 Open City Playlist
+          🎵 Open Vibe Playlist
         </a>
-      </>
-    )}
+
+        {cityPlaylist?.url && (
+          <>
+            <div className="border-t border-white/30 my-4" />
+            <p className="text-sm italic">
+              Oh — and since you're in {city}, here's Apple’s Top 25 for your city too. 🎧
+            </p>
+            <a
+              href={cityPlaylist.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-white text-indigo-600 font-semibold px-6 py-2 rounded-full shadow hover:bg-indigo-100 transition"
+            >
+              📍 Open City Playlist
+            </a>
+          </>
+        )}
+      </div>
+    }
+  />
+) : (
+  <div className="bg-white/10 border border-white/20 text-white text-center p-4 rounded-xl shadow">
+    <h3 className="text-xl font-bold mb-2">Talk More Tonight's Playlist 🎶</h3>
+    <p className="text-sm italic">We couldn’t find a playlist for this energy.</p>
+    <p className="text-xs mt-2">Try restarting the date planner to reset your vibe!</p>
   </div>
-}
-/>
+)}
+
+
 
 
         {/* ✅ UPDATED CUSTOM PLAYLIST CARD */}
@@ -422,7 +461,7 @@ back={
   }
 />
 
-{classicList.length > 0 && (
+{randomClassicList.length > 0 && (
   <FlipCard
     front={
       <div className="text-center">
@@ -436,7 +475,7 @@ back={
   <div className="p-4 bg-gradient-to-br from-white via-[#f3e8ff] to-[#e0f2fe] rounded-xl shadow-md text-sm text-[#0a2540] border border-white/60">
 
 
-        {classicList.map((idea, i) => (
+        {randomClassicList.map((idea, i) => (
           <p key={i}>• {idea}</p>
         ))}
         <p className="text-xs italic text-gray-500 pt-2">
@@ -447,7 +486,7 @@ back={
   />
 )}
 
-{hiddenGemList.length > 0 && (
+{randomHiddenGemList.length > 0 && (
   <FlipCard
     front={
       <div className="text-center">
@@ -459,7 +498,7 @@ back={
     }
     back={
 <div className="p-4 bg-gradient-to-br from-[#e0f2fe] via-[#d0f6f0] to-[#ccfbf1] rounded-xl shadow-md text-sm text-[#0a2540] border border-white/60">
-        {hiddenGemList.map((gem, i) => (
+        {randomHiddenGemList.map((gem, i) => (
           <p key={i}>• {gem}</p>
         ))}
         <p className="text-xs italic text-gray-500 pt-2">
@@ -470,7 +509,8 @@ back={
   />
 )}
 
-        {showLongIsland && <LongIslandFilmFestivalsCard />}
+  {/* {showLongIsland && <LongIslandFilmFestivalsCard />} */}
+
 
         <FlipCard
   front={
@@ -481,31 +521,93 @@ back={
       </p>
     </div>
   }
-  back={
-    <div className="p-4 text-sm space-y-2 bg-gradient-to-br from-[#fffde7] via-[#fff9c4] to-[#fff59d] rounded-xl shadow-md text-[#0a2540] border border-white/60">
-      {lowCostShuffled.map((idea, i) => (
-        <p key={i}>• {idea}</p>
-      ))}
-    </div>
-  }
+back={
+  <div className="p-4 text-sm space-y-2 bg-gradient-to-br from-[#fffde7] via-[#fff9c4] to-[#fff59d] rounded-xl shadow-md text-[#0a2540] border border-white/60">
+    {randomLowCostList.map((idea, i) => (
+      <p key={i}>
+        • {idea.replace(/{dateName}/g, dateName)}
+      </p>
+    ))}
+  </div>
+}
+
 />
 
 
-        <FlipCard
-          front={<div><h3 className="text-xl font-bold mb-3">Magic from Friends ✨</h3><p className="text-sm">Click to reveal hand-picked love from us 💖</p></div>}
-          back={<div className="p-4 text-sm"><h4 className="font-semibold text-lg mb-2">{randomSpotlight.title}</h4><p className="mb-3">{randomSpotlight.blurb}</p><a href={randomSpotlight.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm">{randomSpotlight.linkText}</a></div>}
-        />
-
-        <FlipCard
-          front={<div><h3 className="text-xl font-bold mb-3">✨ Want to Be Featured?</h3><p className="text-sm">Tell us your story — We want to spotlight it 🌟</p></div>}
-          back={<div className="p-4 text-sm"><h4 className="font-semibold text-lg mb-2">{permanentSpotlight.title}</h4><p className="mb-3">{permanentSpotlight.blurb}</p><a href={permanentSpotlight.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm">{permanentSpotlight.linkText}</a></div>}
-        />
+{/* Magic from Friends */}
+{randomSpotlight?.title && (
+  <FlipCard
+    front={
+      <div>
+        <h3 className="text-xl font-bold mb-3">Magic from Friends ✨</h3>
+        <p className="text-sm">Click to reveal hand-picked love from us 💖</p>
       </div>
+    }
+    back={
+      <div className="p-4 text-sm text-[#0a2540] space-y-3">
+        <h4 className="font-semibold text-lg">{randomSpotlight.title}</h4>
+        {randomSpotlight.blurb && <p>{randomSpotlight.blurb}</p>}
+        {randomSpotlight.url && (
+          <a
+            href={randomSpotlight.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition"
+          >
+            {randomSpotlight.linkText || "Read More"}
+          </a>
+        )}
+      </div>
+    }
+  />
+)}
+
+{userData.state === "NY" && <LongIslandMusicFlipCard town={userData.city} />}
+
+
+
+
+
+{/* Want to Be Featured */}
+<FlipCard
+  front={
+    <div>
+      <h3 className="text-xl font-bold mb-3">✨ Want to Be Featured?</h3>
+      <p className="text-sm">Tell us your story — We want to spotlight it 🌟</p>
+    </div>
+  }
+back={
+  <div className="p-6 text-sm text-[#0a2540] space-y-4 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 rounded-xl shadow-md border border-pink-200">
+    <h4 className="font-bold text-2xl mb-2 text-pink-600 drop-shadow-sm">
+      Talk More - To Us! ✨
+    </h4>
+    <p className="mb-4 italic text-purple-700">
+      Share your unique story with us and get a chance to be highlighted in the app!
+    </p>
+    <p className="mb-4">
+      Whether you're creating something awesome, had a magical date, a funny moment, or a heartwarming memory — we want to celebrate it.
+    </p>
+    <a
+      href="mailto:talkmoretonight@gmail.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-3 rounded-full shadow transition"
+    >
+      ✉️ Send Your Story
+    </a>
+    <p className="text-xs text-gray-400 italic mt-2">
+      We read every submission — your moment could inspire others!
+    </p>
+  </div>
+}/>
+
+  
 
       <div className="max-w-xl mx-auto bg-white/30 backdrop-blur-md border border-white/60 rounded-xl p-6 shadow-lg mt-12">
-        <p className="text-center italic text-lg text-indigo-700 mb-2">
-          Now that you know where to go and what to do… there's some more magic to uncover!
-        </p>
+       <p className="text xl-center text-lg text-indigo-700 mb-2">
+  ✨ You planned a great date with {dateName}. You know where to go and what to do. Get ready {userName}, because the real magic is just getting started! 💫
+</p>
+
         <p className="text-xl font-bold text-center text-[#0a2540] mb-4 drop-shadow-sm">
           Let’s pick some topics to talk about! 💬
         </p>
@@ -515,6 +617,7 @@ back={
         >
           Next: Pick Your Topics ➡️
         </button>
+      </div>
       </div>
     </div>
   );

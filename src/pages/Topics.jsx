@@ -75,12 +75,17 @@ const Topics = () => {
     setUserData({ ...userData, subtopicAnswers: {} });
   };
 
-  const handleSubmit = () => {
-    if (selectedTopics.length > 0) {
-      setUserData({ ...userData, selectedTopics });
-      navigate("/tonightstalktips");
-    }
-  };
+const handleSubmit = () => {
+  if (selectedTopics.length > 0) {
+    setUserData({ 
+      ...userData, 
+      selectedTopics, 
+      subtopicAnswers: userData.subtopicAnswers 
+    });
+    navigate("/tonightstalktips");
+  }
+};
+
 
   return (
     <div className={`min-h-screen ${theme.bg} text-[#0a2540] px-4 py-8`}>

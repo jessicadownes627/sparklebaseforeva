@@ -1,167 +1,287 @@
+// src/data/justFriends.js
+
 const justFriends = {
-    evening: {
-      flexible: {
-        romantic: {
-          casual: "Pick up your favorite snacks and take a walk or drive with music. Talk about the week or say nothing at all — no rules here.",
-          fancy: "Go out to eat just because you both like food and each other’s company. Order something ridiculous and split it.",
-          drinks: "Go to a spot that feels cozy and just sit — could be a bar, a café, or a boba place. Let the vibe carry the convo.",
-          mix: "Pick a place you’ve never been, grab food or drinks, and give it your own rating system. Decor? Vibes? Weird bathroom tile? All fair game."
-        },
-        fun: {
-          casual: "Hit up a food truck or cheap spot and challenge each other to try something weird on the menu. No backing out.",
-          fancy: "Get dressed up and go somewhere that doesn’t match the energy — bowling in formalwear, karaoke in blazers. Just for laughs.",
-          drinks: "Pick a bar with games, trivia, or a weird theme. Compete. Trash talk. Laugh a lot. No one’s here to be cool.",
-          mix: "Do a mini-night crawl: one place for food, one for drinks, one for dessert. Plan as you go. No pressure, just vibes."
-        },
-        chill: {
-          casual: "Grab your comfort food and sit somewhere random — porch, stoop, hood of a car. Chill out and talk about nothing.",
-          fancy: "Find a quiet spot to eat something simple and rate it like you’re food critics. The more dramatic the review, the better.",
-          drinks: "Sip something lowkey and people-watch. Or pet-watch. Or just silently rate outfits and make each other laugh.",
-          mix: "Hang out with no real agenda — grab a bite, walk around, and let the conversation wander. That’s the whole point."
-        },
-        adventurous: {
-          casual: "Pick a new part of town and pretend you’re tourists. Explore like it’s your first day visiting. Take fake photos.",
-          fancy: "Try a cuisine neither of you has had and agree to order whatever looks the wildest. Mystery is the meal.",
-          drinks: "Find a bar with a weird drink special and try it. Bonus points for strange garnishes or drinks with names like 'Dragon Punch.'",
-          mix: "Each pick one thing for the night — could be a place, food, or activity. Put them together like a playlist and let chaos ensue."
-        }
-      },
-      indoors: {
-        romantic: {
-          casual: "Order comfort food and eat it straight from the containers while watching a movie you've both seen a hundred times.",
-          fancy: "Make a playlist and take turns playing each other songs you loved in middle school. Yes, you have to sing the embarrassing ones.",
-          drinks: "Try new sodas or mocktails and rate them dramatically like you're judging a global beverage competition.",
-          mix: "Cook something together that you’ve never tried before — even if it turns out bad, you made a memory (and probably a mess)."
-        },
-        fun: {
-          casual: "Do a two-player video game night, trivia battle, or attempt a TikTok dance you’ll never post. Laughs guaranteed.",
-          fancy: "Host a made-up awards show for each other — 'Best Blanket Fort Builder' or 'Most Dramatic Cough' — full speeches required.",
-          drinks: "Make fake cocktails out of juice, soda, and whatever's in the fridge. Give them names and rate them on a vibes scale.",
-          mix: "Pick a random YouTube rabbit hole and fall into it together — from shark attacks to slime making to 'how pencils are made.'"
-        },
-        chill: {
-          casual: "Sit on the floor with snacks and scroll TikTok together like you’re one shared brain cell.",
-          fancy: "Do nothing. Literally. Sit near each other in comfy clothes, barely talk, and enjoy the silence with snacks nearby.",
-          drinks: "Make warm drinks and build a blanket pile. You don’t have to talk much — just exist like two humans who survived the day.",
-          mix: "Order something random for dinner, eat on the couch, and play 'Would You Rather' until you both make up questions too weird to answer."
-        },
-        adventurous: {
-          casual: "Try cooking something new with no recipe. Just vibes, guesses, and a backup frozen pizza in case of disaster.",
-          fancy: "Create your own themed dinner night: Pirate Pasta Night? Sushi and Space Jam? Fully commit. Decorations optional, enthusiasm required.",
-          drinks: "Do a mixology night with ingredients you already have. Make the wildest drink combo possible and see if it’s actually good.",
-          mix: "Write random activities on slips of paper, put them in a bowl, and pull one every 30 minutes. Whatever it says — you do it."
-        }
-      }
+  morning: {
+    fun: {
+      casual: [
+        "Try a breakfast spot with the wildest menu items and order for each other.",
+        "Hit a coffee shop, then explore a random thrift store — see who finds the weirdest item.",
+        "Make pancakes or waffles at home and go all out with toppings.",
+        "Set up a 'cartoon and cereal' morning, complete with pajamas and your favorite throwbacks.",
+        "Go on a donut crawl — compare, judge, and crown a winner.",
+        "Do a silly fitness challenge together (jump rope, hula hoop, whatever gets you laughing).",
+      ],
+      fancy: [
+        "Brunch at a bougie spot and rate everything like food critics.",
+        "Book a paint-and-sip morning class (bonus points for ridiculous art).",
+        "Try a cooking class together and see who ends up wearing the most flour.",
+        "Dress up for a 'mocktail morning' and toast to something random.",
+        "Host a themed brunch at home — costumes required.",
+      ],
+      drinks: [
+        "Create a DIY coffee flight with crazy creamers or flavor syrups.",
+        "Try a new bubble tea spot and invent your own drink combos.",
+        "Go on a juice or smoothie tasting adventure.",
+        "Hit the most aesthetic café in town and take artsy photos.",
+        "Mix up weird breakfast mocktails and do a taste test.",
+      ],
+      mix: [
+        "Pick a playlist and have a spontaneous living room dance party.",
+        "Do a blind taste test — cereal, fruit, anything in the kitchen.",
+        "Try to recreate a viral TikTok breakfast trend.",
+        "Swap stories about your most embarrassing mornings.",
+        "Build the ultimate breakfast board together and judge each creation.",
+      ]
     },
-    afternoon: {
-      flexible: {
-        romantic: {
-          casual: "Grab iced coffee and take a lazy walk. Talk about nothing, or everything, or just rate every dog you see together.",
-          fancy: "Go to lunch and pretend it’s a work meeting, a secret club, or a restaurant review assignment. Fully commit to the bit.",
-          drinks: "Split a drink flight — boba, tea, slushies, anything. Give each one a dramatic name and fake backstory.",
-          mix: "Pick a vibe: farmers market, thrift store, corner shop. Wander with no agenda and see what random finds you leave with."
-        },
-        fun: {
-          casual: "Hit up a park with snacks and play dumb games from childhood — rock-paper-scissors tournaments or impromptu obstacle courses.",
-          fancy: "Go to a self-serve froyo bar or over-the-top dessert spot. Try to make the ugliest sundae on purpose.",
-          drinks: "Do a mini food + drink crawl — one appetizer and one drink at three places. Set a budget and rate the experience.",
-          mix: "Try a pop-up or local event — a fair, weird shop, or sidewalk sale — and treat it like the highlight of your week, even if it’s not."
-        },
-        chill: {
-          casual: "Get snacks and go sit somewhere random — a dock, a bench, your car — and do absolutely nothing productive.",
-          fancy: "Pick a calm spot to people-watch and play 'Guess Their Life Story.' Quiet commentary required, judging optional.",
-          drinks: "Go for bubble tea or iced lattes and sit on the sidewalk, steps, or a bench like teenagers with nowhere to be.",
-          mix: "Each bring one snack and one podcast or playlist rec. Trade. Eat. Walk. Talk. It’s that simple."
-        },
-        adventurous: {
-          casual: "Visit a store with zero intention of buying anything — Halloween shop, pet store, furniture showroom. Narrate the experience.",
-          fancy: "Book a spontaneous experience: cooking class, roller rink, museum tour. You don’t have to be good — just go.",
-          drinks: "Find a weird drink bar — nitrogen slushies? Butterbeer? — and try it. Make up a five-star review afterward.",
-          mix: "Each of you pick a random stop and create a secret mini itinerary. No spoilers, just go with it and compare routes at the end."
-        }
-      },
-      indoors: {
-        romantic: {
-          casual: "Make sandwiches or snacks and eat on the floor while watching music videos from middle school. Bonus points for singing along.",
-          fancy: "Pick a movie you both love and turn it into a live commentary session. Recast it. Rewrite it. Make it yours.",
-          drinks: "Try to make your own iced drinks at home — lemonades, lattes, or soda mixes — then name them after each other.",
-          mix: "Write a silly list of things to debate: pancakes vs waffles, dogs vs cats, pirates vs wizards. Prepare your arguments."
-        },
-        fun: {
-          casual: "Do a 'weird YouTube rabbit hole' challenge — take turns picking random videos and seeing how far you spiral.",
-          fancy: "Create a mini game show — trivia, 'who knows me better,' or guessing facts. There must be prizes, even if it’s just snacks.",
-          drinks: "Pretend you’re hosting a fake talk show. Interview each other, pitch fake inventions, and make up celebrity drama.",
-          mix: "Try to recreate a viral trend, cooking hack, or silly online challenge. Bonus points if it’s a disaster."
-        },
-        chill: {
-          casual: "Lay on opposite sides of the couch, scroll silently, and only interrupt each other for memes worth sharing out loud.",
-          fancy: "Turn on something ambient — ocean sounds, lo-fi beats — and read next to each other. Cozy energy only.",
-          drinks: "Make a drink, put on fuzzy socks, and take turns naming your ‘top 5s’ — snacks, animals, movie quotes, whatever.",
-          mix: "Swap playlists or podcast recs, then sit and listen together like it’s 2004 and you're burning CDs."
-        },
-        adventurous: {
-          casual: "Try to bake something from scratch using only what’s already in the kitchen. Taste-test and roast your own results.",
-          fancy: "Create a fake travel day — pick a country, cook something from there, play their music, and pretend you're already visiting.",
-          drinks: "Mix random sodas or drinks together, give them epic names, and then challenge each other to make fake commercials for them.",
-          mix: "Set a timer and clean a room together while blasting chaotic music. Then collapse on the floor like it was the Olympics."
-        }
-      }
+    chill: {
+      casual: [
+        "Grab coffee and go for a slow walk, talking about everything and nothing.",
+        "Do a crossword or word game together — winner picks the next playlist.",
+        "Have a lazy couch hang with cozy blankets and true crime podcasts.",
+        "Take turns picking YouTube or TikTok videos to watch together.",
+        "Start a puzzle and see how far you get before getting distracted.",
+      ],
+      fancy: [
+        "Book a fancy tea room or high tea service — pinkies up!",
+        "Have a morning spa hang with face masks and chill music.",
+        "Go to a sunrise yoga or meditation class (if you can get up!).",
+        "Hit a cool bookstore and swap recommendations.",
+        "Try a fancy pastry shop and share a sampler box.",
+      ],
+      drinks: [
+        "Go to a local juice bar and try the weirdest thing on the menu.",
+        "Make a smoothie bar at home with every topping you can find.",
+        "Have a warm drink contest — hot cocoa, tea, creative lattes.",
+        "Bring travel mugs and find the best bench for people-watching.",
+        "Try an iced coffee tasting — who finds the ultimate blend?",
+      ],
+      mix: [
+        "Play a morning trivia game or do a crossword together.",
+        "Pick a new 'morning show' and rate the hosts’ banter.",
+        "Try gentle stretching or yoga with a comedy playlist in the background.",
+        "Swap your favorite memes or morning affirmations.",
+        "Make breakfast together — but everything has to be finger food.",
+      ]
     },
-    morning: {
-      flexible: {
-        romantic: {
-          casual: "Pick up bagels or pastries and walk somewhere quiet. Talk about dreams — the sleepy kind and the future kind.",
-          fancy: "Go to a slow brunch spot and sit in the sunniest seat. Bonus if there’s a shared appetizer and unlimited refills.",
-          drinks: "Grab something warm and sit somewhere calm — a bench, a curb, a car — and watch the world wake up together.",
-          mix: "Meet up and build a 'DIY breakfast picnic' from random places: one drink stop, one food stop, one secret snack."
-        },
-        fun: {
-          casual: "Do a cereal taste test — bring two kinds each and vote for the ultimate combo. Bragging rights forever.",
-          fancy: "Try a trendy brunch dish neither of you would order solo — share it, overhype it, take pics like it’s a food blog.",
-          drinks: "Do a boba or coffee crawl — two to three places, one small drink each, and a running ranking system.",
-          mix: "Wake up, meet up, and let a coin flip decide: brunch or donuts? Fancy or funky? Left or right? Build your morning as you go."
-        },
-        chill: {
-          casual: "Pick up coffee and just sit somewhere. Doesn’t matter where. The morning quiet is the whole vibe.",
-          fancy: "Go to a quiet café and sit with notebooks, sketchpads, or books. Be side-by-side but fully at ease.",
-          drinks: "Split a giant coffee or smoothie and sit on a porch or stoop like two retirees with nothing but time and gossip.",
-          mix: "Bring snacks and take a slow walk with a podcast you both listen to. Pause when something sparks a tangent."
-        },
-        adventurous: {
-          casual: "Try a weird donut place, an international bakery, or that breakfast spot you always drive past but never stop at.",
-          fancy: "Make a plan to brunch somewhere totally new — rooftop, boat, bookstore café — then pretend you're reviewing it for a magazine.",
-          drinks: "Order the most unusual drink on the menu — ube latte? turmeric soda? — and toast to whatever today becomes.",
-          mix: "Each pick a breakfast stop without telling the other. Visit both and let fate (and tastebuds) decide the winner."
-        }
-      },
-      indoors: {
-        romantic: {
-          casual: "Make toaster waffles or frozen pancakes and eat them on the floor like it’s a mini picnic. No table, no rules.",
-          fancy: "Do a ‘brunch club’ at home: fruit, eggs, coffee, music, and the mutual agreement to pretend you’re somewhere fancy.",
-          drinks: "Brew something warm and just hang out in pajamas — no plans, just vibes and sleepy storytelling.",
-          mix: "Make a shared playlist and play it while making a messy breakfast together. The chaos is half the fun."
-        },
-        fun: {
-          casual: "Set up a cereal buffet with way too many options and cartoon reruns in the background. Best morning energy.",
-          fancy: "Do a homemade brunch challenge — pick ingredients from the kitchen and invent a new dish. Name it something ridiculous.",
-          drinks: "Make a juice or coffee taste test lineup. Yes, one should probably be gross. That’s the game.",
-          mix: "Play 'Guess That Song' or 'Finish That Lyric' while making breakfast. Winner gets the first pancake."
-        },
-        chill: {
-          casual: "Order in, sit on the couch, and scroll quietly next to each other while sharing random screenshots and memes.",
-          fancy: "Do a soft, sleepy morning — blankets, lofi beats, slow breakfast, and shared silence. Cozy counts as an activity.",
-          drinks: "Make tea or lattes and sit near a window. Talk, read, or just chill with background sounds and a snack nearby.",
-          mix: "Pull random cards or questions from a game deck — something chill. Answer what you want, skip what you don’t."
-        },
-        adventurous: {
-          casual: "Raid the fridge and invent the weirdest breakfast you can. Try it together and rank it like food show judges.",
-          fancy: "Pick a country and try to make a typical breakfast from there — food, drink, music, and a very bad accent required.",
-          drinks: "Create your own signature drink using whatever’s in the fridge. Bonus if it ends up having pickles or chocolate chips.",
-          mix: "Write three mystery breakfast ideas on slips of paper, shuffle, pick one, and fully commit. Even if it’s ‘salad at 9am.’"
-        }
-      }
+    adventurous: {
+      casual: [
+        "Go for an early hike and bring breakfast snacks for the summit.",
+        "Check out a random park and try every playground thing adults aren’t supposed to.",
+        "Go for a sunrise bike ride and grab coffee on the way back.",
+        "Visit the farmer’s market and try to buy the oddest veggie.",
+        "Plan a drive-thru breakfast crawl: one item at each spot, then rank them.",
+      ],
+      fancy: [
+        "Try a sunrise hot air balloon ride (YOLO!).",
+        "Take a guided group walk or running club together.",
+        "Go paddle boarding or kayaking if you’re near water.",
+        "Do a group fitness class and see who’s the most competitive.",
+        "Join a local group hike or walking tour.",
+      ],
+      drinks: [
+        "Find a smoothie place with add-ins you’ve never tried before.",
+        "Try ‘breakfast mocktails’ with fruit, seltzer, and wild flavors.",
+        "Bring thermoses and invent the perfect road trip drink.",
+        "Try kombucha tasting — pick the weirdest flavor.",
+        "Order drinks at a place where you don’t know any ingredients and rate the mystery.",
+      ],
+      mix: [
+        "Plan a breakfast scavenger hunt — every stop requires a photo proof.",
+        "Try a 'yes day': one friend picks, the other can’t say no.",
+        "Start a challenge (who can spot more dogs, more pink cars, etc.).",
+        "Make a bucket list for the year over breakfast and pick one to start today.",
+        "Find a random free morning event and just show up.",
+      ]
     }
-  };
-  
-  export default justFriends;
-  
+  },
+
+  afternoon: {
+    fun: {
+      casual: [
+        "Try a food truck lunch and split whatever looks weirdest.",
+        "Host a mini-olympics in your backyard or local park (medals = snacks).",
+        "Go thrifting and challenge each other to find the wildest item for $5.",
+        "Try a new arcade or bowling alley — loser buys snacks.",
+        "Take turns making the ultimate grilled cheese and vote for the champ.",
+        "Do a two-person trivia contest with the craziest questions you can think of.",
+      ],
+      fancy: [
+        "Book a pottery or art class for friends — see who makes the goofiest creation.",
+        "Go to a fancy dessert shop and try a sampler platter.",
+        "Try a ‘paint and sip’ class with mocktails or sodas.",
+        "Do a guided city tour and act like tourists in your own town.",
+        "Try a high tea or fancy café (bonus for hats).",
+      ],
+      drinks: [
+        "Try an iced coffee flight at a hip café.",
+        "Visit a soda shop or retro diner for old-school drinks.",
+        "Make your own bubble tea or matcha lattes at home.",
+        "Host a mocktail competition using random ingredients from the kitchen.",
+        "Go out for slushies and see who can get the wildest color combo.",
+      ],
+      mix: [
+        "Set up a snack tasting challenge: chips, candy, or anything new.",
+        "Try a puzzle or game marathon — loser does a dare.",
+        "Plan a fake awards show for each other: Best Snack Selector, Most Dramatic Eye Roll, etc.",
+        "Take silly photos around town (bonus for weird poses).",
+        "Create a playlist together and then rate each song.",
+      ]
+    },
+    chill: {
+      casual: [
+        "Have a lazy picnic at the park with all your favorite snacks.",
+        "Read side by side at a library or indie bookstore.",
+        "Host a coloring or doodling session — no artistic talent required.",
+        "Watch old music videos and laugh at the fashion choices.",
+        "Do a slow walk-and-talk, picking random conversation topics.",
+      ],
+      fancy: [
+        "Find a quiet museum or art gallery and critique everything.",
+        "Try a guided meditation or sound bath together.",
+        "Book a fancy afternoon tea (finger sandwiches, scones, the works).",
+        "Have a dessert sampler at the fanciest place you can get into.",
+        "Try a group yoga or barre class just for fun.",
+      ],
+      drinks: [
+        "Find a cozy café and sample weird lattes or seasonal specials.",
+        "Make milkshakes or floats at home — toppings required.",
+        "Go to a juice bar and try the wildest combos.",
+        "Share a giant pot of tea and just talk for hours.",
+        "Have a water flavoring taste-off (who can invent the best one?).",
+      ],
+      mix: [
+        "Do a blindfolded snack taste test.",
+        "Pick a random Spotify playlist and rate every song.",
+        "Create vision boards for your summer plans.",
+        "Play ‘20 Questions’ with silly themes.",
+        "Host a meme-creating contest with inside jokes.",
+      ]
+    },
+    adventurous: {
+      casual: [
+        "Go geocaching or hunt for scavenger clues around the city.",
+        "Try a new sport or hobby together (frisbee golf, fencing, roller skating).",
+        "Ride public transit to the end of the line and see what’s there.",
+        "Sign up for a drop-in improv or dance class.",
+        "Try a food crawl: appetizers at one spot, mains at another, dessert at a third.",
+      ],
+      fancy: [
+        "Book a group escape room and recruit other friends for the challenge.",
+        "Go on a spontaneous day trip — no plan, just vibes.",
+        "Attend a fun festival or fair together.",
+        "Try an aerial yoga or circus skills class.",
+        "Go ziplining or rock climbing (if you’re brave enough!).",
+      ],
+      drinks: [
+        "Try every lemonade stand or juice cart you pass and rank them.",
+        "Make crazy ice cream sodas and see whose creation is best.",
+        "Visit a brewery or soda pop shop for tasting flights.",
+        "Try weird energy drinks and document the reactions.",
+        "Go to a root beer tasting if you can find one.",
+      ],
+      mix: [
+        "Create a scavenger hunt for each other — winner gets a silly trophy.",
+        "Flip a coin to decide the next activity — keep going all day.",
+        "Have a 'choose your own adventure' afternoon: pick activities from a hat.",
+        "Invent a new handshake or group ritual.",
+        "Make a vlog or TikTok documenting your entire afternoon.",
+      ]
+    }
+  },
+
+  evening: {
+    fun: {
+      casual: [
+        "Game night marathon with all your favorite classics and new finds.",
+        "Have a themed movie night — dress up as the characters.",
+        "Host a DIY pizza party and go wild with toppings.",
+        "Do a comedy show binge and rate the best stand-up bits.",
+        "Try a paint-and-sip night at home.",
+        "Build a blanket fort and watch ridiculous TV.",
+      ],
+      fancy: [
+        "Attend a trivia night or bar game night.",
+        "Book a cooking or mixology class for the group.",
+        "Go to a karaoke bar — bonus points for duets.",
+        "Visit a rooftop or fancy lounge for snacks and people-watching.",
+        "Try a ticketed event: concert, sports, or comedy show.",
+      ],
+      drinks: [
+        "Do a mocktail taste test with every weird garnish you can find.",
+        "Go out for dessert and drinks — rotate who picks each course.",
+        "Find a spot with wild soda flavors and try them all.",
+        "Host a ‘create your own soda’ night at home.",
+        "Try a milkshake or ice cream float flight and judge them.",
+      ],
+      mix: [
+        "Alternate who picks each activity for the night — no repeats.",
+        "Create a random challenge wheel and spin for each hour.",
+        "Host a silly awards ceremony for the day's funniest moments.",
+        "Make a playlist together and dance it out, no matter the skill level.",
+        "Have a meme night: swap, create, and rate your favorites.",
+      ]
+    },
+    chill: {
+      casual: [
+        "Order takeout and watch comfort movies with cozy lighting.",
+        "Host a ‘snack and chat’ night — only rule: pajamas required.",
+        "Go on a walk and rate neighborhood holiday lights/decor.",
+        "Have a slow jam listening party, sharing favorite songs.",
+        "Read or do crafts while talking about your day.",
+      ],
+      fancy: [
+        "Book a group spa session or try DIY face masks.",
+        "Try a fancy dessert night: split something wild and Instagram it.",
+        "Attend a late-night museum or gallery event.",
+        "Go stargazing or planet-watching with snacks.",
+        "Host a ‘wine and design’ class with fancy glasses.",
+      ],
+      drinks: [
+        "Make hot cocoa or spiced cider and have a cozy gossip session.",
+        "Do a tea tasting marathon and vote on the weirdest blend.",
+        "Go to a mocktail lounge if there’s one nearby.",
+        "Try a bubble tea taste test and rate the boba-to-drink ratio.",
+        "Host a hot drink recipe contest at home.",
+      ],
+      mix: [
+        "Do a friend Q&A — each writes goofy questions and puts them in a hat.",
+        "Play ‘never have I ever’ but only for weird and wonderful things.",
+        "Make a giant snack board and try everything.",
+        "Host a photo slideshow night (childhood, vacations, pets, etc.).",
+        "Try a guided meditation for laughs (who can last the longest without giggling?).",
+      ]
+    },
+    adventurous: {
+      casual: [
+        "Go night bowling or late-night roller skating.",
+        "Do a glow stick scavenger hunt in the park.",
+        "Find a random event online and go — no questions asked.",
+        "Try an outdoor movie or drive-in theater.",
+        "Go on a city lights photo adventure.",
+      ],
+      fancy: [
+        "Book a late-night escape room with your crew.",
+        "Attend a midnight release or launch event (game, movie, book, whatever!).",
+        "Take a dance class — just for fun, no pressure.",
+        "Do a nighttime hike or nature walk (bring flashlights!).",
+        "Go to a fancy restaurant for just dessert.",
+      ],
+      drinks: [
+        "Host a ‘soda roulette’ night: every bottle must be a surprise.",
+        "Find a place with creative mocktails and order the wildest.",
+        "Try energy drinks from different countries — rate the buzz.",
+        "Do a ‘root beer float’ party at home with toppings.",
+        "Go out for late-night milkshakes or slushies.",
+      ],
+      mix: [
+        "Draw activity ideas from a hat and do as many as possible before midnight.",
+        "Do a TikTok or Reel challenge together and share the best ones.",
+        "Invent a new group handshake or chant.",
+        "Find and play the silliest board games you can get your hands on.",
+        "Plan a spontaneous 'staycation adventure' for your next meetup.",
+      ]
+    }
+  }
+};
+
+export default justFriends;
