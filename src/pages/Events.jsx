@@ -81,7 +81,8 @@ const Events = () => {
   const [randomClassicList, setRandomClassicList] = useState([]);
   const [randomHiddenGemList, setRandomHiddenGemList] = useState([]);
   const [randomLowCostList, setRandomLowCostList] = useState([]);
-
+  const [isFriendsSpotlightLoading, setIsFriendsSpotlightLoading] = useState(true);
+ 
   // Low Cost Ideas — randomize ONCE
   useEffect(() => {
     if (Array.isArray(lowCostIdeas) && lowCostIdeas.length > 0) {
@@ -188,8 +189,8 @@ const Events = () => {
     <div className={`min-h-screen ${theme.bg} ${theme.text} px-6 pt-10 pb-32`}>
       <PageHeader />
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <h2 className="text-2xl font-light tracking-tight mb-2"> Thoughtfully designed for you and {dateName}</h2>
-        <p className="italic text-lg">Crafted with care — ready to shine ✨</p>
+        <h2 className="text-2xl font-light tracking-tight mb-2"> Thoughtfully designed just for you and {dateName}</h2>
+        <p className="italic text-xl">🌟 Crafted with care — ready to shine 🌟</p>
       </div>
 
       <div className="flex flex-wrap justify-center gap-6 mb-12">
@@ -496,7 +497,7 @@ front={
       <div className="text-center">
         <h3 className="text-xl font-bold mb-2">Hidden Gems 🌟</h3>
         <p className="italic text-sm text-gray-300">
-          Two secret spots to surprise them with…
+          Two secret spots to surprise your date with…
         </p>
       </div>
     }
@@ -539,6 +540,7 @@ back={
 
 
 {/* Magic from Friends */}
+{/* Magic from Friends */}
 {randomSpotlight?.title && (
   <FlipCard
     front={
@@ -566,6 +568,11 @@ back={
   />
 )}
 
+
+
+
+
+
 {userData.state === "NY" && <LongIslandMusicFlipCard town={userData.city} />}
 
 
@@ -580,48 +587,59 @@ back={
       <p className="text-sm">Tell us your story — We want to spotlight it 🌟</p>
     </div>
   }
-back={
-  <div className="p-6 text-sm text-[#0a2540] space-y-4 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 rounded-xl shadow-md border border-pink-200">
-    <h4 className="font-bold text-2xl mb-2 text-pink-600 drop-shadow-sm">
-      Talk More - To Us! ✨
-    </h4>
-    <p className="mb-4 italic text-purple-700">
-      Share your unique story with us and get a chance to be highlighted in the app!
-    </p>
-    <p className="mb-4">
-      Whether you're creating something awesome, had a magical date, a funny moment, or a heartwarming memory — we want to celebrate it.
-    </p>
-    <a
-      href="mailto:talkmoretonight@gmail.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-3 rounded-full shadow transition"
-    >
-      ✉️ Send Your Story
-    </a>
-    <p className="text-xs text-gray-400 italic mt-2">
-      We read every submission — your moment could inspire others!
-    </p>
-  </div>
-}/>
+  back={
+    <div className="p-6 text-sm text-[#0a2540] space-y-4 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 rounded-xl shadow-md border border-pink-200">
+      <h4 className="font-bold text-2xl mb-2 text-pink-600 drop-shadow-sm">
+        Talk More - To Us! ✨
+      </h4>
+      <p className="mb-4 italic text-purple-700">
+        Share your unique story with us and have a chance to be highlighted!
+      </p>
+      <p className="mb-4">
+        Whether you're creating something awesome, had a magical date, a funny moment, or a heartwarming memory — we want to celebrate it.
+      </p>
+
+      {/* ⭐️ Featured Love Story */}
+      <div className="bg-white/60 border-l-4 border-pink-400 rounded-lg p-4 shadow mb-2">
+        <p className="text-sm font-bold text-pink-700 mb-1">🌟 Featured Love Story</p>
+        <p className="italic text-[#aa276b] mb-2">
+          “We used this app on our 2nd coffee date and laughed over the conversation cards for hours.”
+        </p>
+        <p className="text-xs text-gray-700 text-right">— Anna, Los Angeles, CA</p>
+      </div>
+
+      <a
+        href="mailto:talkmoretonight@gmail.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-3 rounded-full shadow transition"
+      >
+        ✉️ Send Your Story
+      </a>
+      <p className="text-xs text-gray-400 italic mt-2">
+        We read every submission — your moment could inspire others!
+      </p>
+    </div>
+  }
+/>
+
 
   
 
-      <div className="max-w-xl mx-auto bg-white/30 backdrop-blur-md border border-white/60 rounded-xl p-6 shadow-lg mt-12">
-       <p className="text xl-center text-lg text-indigo-700 mb-2">
-  ✨ You planned a great date with {dateName}. You know where to go and what to do. Get ready {userName}, because the real magic is just getting started! 💫
-</p>
-
-        <p className="text-xl font-bold text-center text-[#0a2540] mb-4 drop-shadow-sm">
-          Let’s pick some topics to talk about! 💬
-        </p>
-        <button
-          onClick={() => navigate('/topics')}
-          className="mx-auto block bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md transition"
-        >
-          Next: Pick Your Topics ➡️
-        </button>
-      </div>
+<div className="max-w-xl mx-auto bg-white/30 backdrop-blur-md border border-white/60 rounded-xl p-6 shadow-lg mt-12 text-center">
+  <p className="text-lg text-indigo-700 mb-2">
+    Get ready <span className="font-semibold">{userName}</span>, because the real magic is just getting started! <span role="img" aria-label="magic">💫</span>
+  </p>
+  <p className="text-xl font-bold text-[#0a2540] mb-4 mt-4">
+    Let’s pick some topics to talk about! <span role="img" aria-label="chat">💬</span>
+  </p>
+  <button
+    onClick={() => navigate('/topics')}
+    className="mx-auto block bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md transition"
+  >
+    Next: Pick Your Topics ➡️
+  </button>
+</div>
       </div>
     </div>
   );

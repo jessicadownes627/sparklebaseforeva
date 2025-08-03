@@ -92,7 +92,7 @@ const handleSubmit = () => {
       <PageHeader />
       <div className="text-center max-w-xl mx-auto">
         <h2 className="text-xl font-semibold mb-1">
-          {`${userName} — what’s your date into… besides YOU? 😉`}
+          {`${userName} — what’s your date into? Besides YOU! 😉`}
         </h2>
         <p className="text-sm opacity-80 mb-4">
           Pick up to 5 topics below. Click any group to explore ✨

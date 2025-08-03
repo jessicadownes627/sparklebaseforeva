@@ -21,6 +21,15 @@ import bigGamesFallback from "../data/bigGamesFallback";
 import DateNightFunSection from "../components/DateNightFunSection";
 import curatedFallbacksLocal from "../data/curatedFallbacks";
 
+
+function getSportEmoji(sport) {
+  if (!sport) return "🏅";
+  const foundKey = Object.keys(topicEmojiMap).find((key) =>
+    key.toLowerCase().startsWith(sport.toLowerCase())
+  );
+  return foundKey ? topicEmojiMap[foundKey] : "🏅";
+}
+
 const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const sportsSchedules = [
   { league: "Baseball", link: "https://www.espn.com/mlb/schedule" },
@@ -238,7 +247,7 @@ const gamesToShow = validBigGames.slice(0, 4);
         ))}
 
     <p className="text-center text-white/40 italic text-xs mt-6">
-      Powered by hand-picked headlines… and a strong hint of hope that Apple emails us back soon.
+      Powered by hand-picked headlines… and a strong hint of hope that Apple emails us back soon  🍎 
     </p>
   </section>
 )}
@@ -306,10 +315,12 @@ const gamesToShow = validBigGames.slice(0, 4);
           key={index}
           className="bg-white/5 p-3 rounded-md border border-white/10 text-white"
         >
-          <div className="font-semibold">
-            {item.Event}{" "}
-            <span className="text-xs text-white/70">({item.Sport})</span>
-          </div>
+        <div className="font-semibold flex items-center gap-2">
+  <span className="text-lg">{getSportEmoji(item.Sport)}</span>
+  {item.Event}
+  <span className="text-xs text-white/70 ml-2">({item.Sport})</span>
+</div>
+
           <div className="mt-1 text-xs text-indigo-200">{item["Date(s)"]}</div>
           <div className="text-xs text-indigo-200">{item.Location}</div>
           <div className="mt-1 text-xs italic text-yellow-300 leading-snug break-words">
@@ -357,7 +368,7 @@ const gamesToShow = validBigGames.slice(0, 4);
 
         {/* Things We Love */}
         <div className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20">
-          <h2 className="text-lg font-bold text-white mb-3">🌟 Things We Love This Week</h2>
+        <h2 className="text-lg font-bold text-white mb-3">🌟 The Brighter Side</h2>
           {thingsWeLove.length > 0 ? (
             thingsWeLove.map((item, index) => (
               <div key={index} className="mb-4">
