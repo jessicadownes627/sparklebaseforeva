@@ -59,7 +59,6 @@ const questions = [
   },
 ];
 
-
 const BuildYourNight = () => {
   const navigate = useNavigate();
   const { userData, setUserData } = useUser();
@@ -73,7 +72,13 @@ const BuildYourNight = () => {
 
   const handleSelect = (key, value) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
-    setCurrentIndex((prev) => prev + 1);
+
+    // Auto-advance for all questions except "outfitStyle"
+    if (key !== "outfitStyle") {
+      setTimeout(() => {
+        setCurrentIndex((prev) => prev + 1);
+      }, 2000); // small delay to show affirmation message
+    }
   };
 
   const handleBack = () => {
@@ -82,15 +87,8 @@ const BuildYourNight = () => {
     }
   };
 
-  const handleOutfitContinue = () => {
-    if (answers.outfitStyle) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
   const handleFinish = () => {
-const finalData = { ...userData, ...answers, city, state, energy };
-    console.log("🧠 Final userData object to save:", finalData);
+    const finalData = { ...userData, ...answers, city, state, energy };
     setUserData(finalData);
     navigate("/events");
   };
@@ -122,11 +120,23 @@ const finalData = { ...userData, ...answers, city, state, energy };
           </motion.button>
         ))}
 
-    <AnimatePresence mode="wait">
+     <AnimatePresence mode="wait" initial={false}>
   {currentIndex < questions.length && (
-    <motion.div key={questions[currentIndex].key} className="bg-white/90 p-6 rounded-2xl shadow-xl">
-      <p className="text-sm text-center mb-2">Question {currentIndex + 1} of {questions.length}</p>
-      <h2 className="text-xl text-center font-semibold mb-4">{questions[currentIndex].question}</h2>
+ <motion.div
+  key={currentIndex}
+  className="bg-white/90 p-6 rounded-2xl shadow-xl"
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: -30 }}
+  transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
+>
+
+      <p className="text-sm text-center mb-2">
+        Question {currentIndex + 1} of {questions.length}
+      </p>
+      <h2 className="text-xl text-center font-semibold mb-4">
+        {questions[currentIndex].question}
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {questions[currentIndex].options.map((opt) => {
           const label = typeof opt === "object" ? opt.label : opt;
@@ -135,19 +145,23 @@ const finalData = { ...userData, ...answers, city, state, energy };
             <button
               key={value}
               onClick={() => handleSelect(questions[currentIndex].key, value)}
-              className={`bg-white text-[#0a2540] border px-4 py-2 rounded-xl text-sm shadow ${answers[questions[currentIndex].key] === value ? "ring-2 ring-purple-400" : ""}`}
+              className={`bg-white text-[#0a2540] border px-4 py-2 rounded-xl text-sm shadow ${
+                answers[questions[currentIndex].key] === value
+                  ? "ring-2 ring-purple-400"
+                  : ""
+              }`}
             >
               {label}
             </button>
           );
         })}
       </div>
-      
-      {/* <<< ADD THIS BELOW THE BUTTONS >>> */}
+
+      {/* Affirmation message */}
       {answers[questions[currentIndex].key] && (() => {
         const selectedValue = answers[questions[currentIndex].key];
         const selectedOptionObj = questions[currentIndex].options.find(
-          opt => (typeof opt === "object" ? opt.value : opt) === selectedValue
+          (opt) => (typeof opt === "object" ? opt.value : opt) === selectedValue
         );
         return selectedOptionObj?.message ? (
           <p className="text-xs text-pink-400 mt-4 italic text-center transition-all">
@@ -155,13 +169,23 @@ const finalData = { ...userData, ...answers, city, state, energy };
           </p>
         ) : null;
       })()}
-      {/* <<< END AFFIRMATION MESSAGE >>> */}
 
-      {questions[currentIndex].key === "outfitStyle" && (
-        <button onClick={handleOutfitContinue} className="mt-4 w-full py-2 bg-purple-500 text-white rounded-xl">Continue</button>
+      {/* Only show "Continue" button on outfitStyle */}
+      {questions[currentIndex].key === "outfitStyle" && answers["outfitStyle"] && (
+        <button
+          onClick={() => setCurrentIndex((prev) => prev + 1)}
+          className="mt-4 w-full py-2 bg-purple-500 text-white rounded-xl"
+        >
+          Continue
+        </button>
       )}
+
+      {/* Back button */}
       {currentIndex > 0 && (
-        <button onClick={handleBack} className="mt-4 text-sm underline text-gray-500 hover:text-purple-600">
+        <button
+          onClick={handleBack}
+          className="mt-4 text-sm underline text-gray-500 hover:text-purple-600"
+        >
           ← Go Back
         </button>
       )}
@@ -172,7 +196,9 @@ const finalData = { ...userData, ...answers, city, state, energy };
 
         {currentIndex >= questions.length && (
           <motion.div className="bg-white/90 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-lg font-semibold text-center mb-4">Where are we planning this date?</h2>
+            <h2 className="text-lg font-semibold text-center mb-4">
+              Where are we planning this date?
+            </h2>
             <label className="block text-sm font-medium mb-1">State</label>
             <select
               className="w-full p-2 mb-4 border rounded"
@@ -183,9 +209,13 @@ const finalData = { ...userData, ...answers, city, state, energy };
               }}
             >
               <option value="">Select a state</option>
-              {Object.keys(stateCityOptions).sort().map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              {Object.keys(stateCityOptions)
+                .sort()
+                .map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
             </select>
 
             {state && (
@@ -198,7 +228,9 @@ const finalData = { ...userData, ...answers, city, state, energy };
                 >
                   <option value="">Select a city</option>
                   {stateCityOptions[state]?.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </>
@@ -207,7 +239,11 @@ const finalData = { ...userData, ...answers, city, state, energy };
             <button
               onClick={handleFinish}
               disabled={!city || !state}
-              className={`w-full py-3 rounded-xl font-semibold text-lg shadow-md transition ${city && state ? "bg-purple-500 text-white" : "bg-white text-gray-400 border"}`}
+              className={`w-full py-3 rounded-xl font-semibold text-lg shadow-md transition ${
+                city && state
+                  ? "bg-purple-500 text-white"
+                  : "bg-white text-gray-400 border"
+              }`}
             >
               ✨ Let’s Plan This Date! ✨
             </button>
