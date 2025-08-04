@@ -76,6 +76,18 @@ const Events = () => {
   const finalHiddenGems = { ...starterHiddenGemIdeas, ...hiddenGemIdeas };
   const cityIdeasRaw = finalDateIdeas?.[cityKey] || [];
   const hiddenGemsRaw = finalHiddenGems?.[cityKey] || [];
+  
+  const [events, setEvents] = useState([])
+  const today = new Date();
+  const visibleEvents = events
+  .filter(event => {
+    // Hide if no date, or if date is in the past
+    if (!event.Date) return false;
+    const eventDate = new Date(event.Date);
+    // Only show if the event date is today or in the future
+    return eventDate >= today;
+  })
+  .slice(0, 3); // Show only 3 events at a time
 
   // --- NEW STATE FOR RANDOM PICKED LISTS ---
   const [randomClassicList, setRandomClassicList] = useState([]);
@@ -181,6 +193,11 @@ const Events = () => {
       });
   }, []);
 
+useEffect(() => {
+  fetchLongIslandMusic() // or your actual fetch function
+    .then(data => setEvents(data || []))
+    .catch(() => setEvents([]));
+}, []);
 
 
 
@@ -437,57 +454,65 @@ front={
       <p className="text-sm">Click to create your own vibe.</p>
     </div>
   }
-  back={
-    <div className="p-4" onClick={(e) => e.stopPropagation()}>
-      <p className="text-sm mb-2 font-medium text-center">
-        Want to make a custom playlist for <strong>{dateName}</strong>?
-      </p>
-      <input
-        type="text"
-        placeholder="Paste playlist link..."
-        value={customPlaylistUrl}
-        onChange={(e) => setCustomPlaylistUrl(e.target.value)}
-        className="w-full p-2 border rounded mb-2"
-      />
-      <button
-        onClick={handleSave}
-        className="bg-[#0a2540] text-white w-full py-2 rounded hover:bg-[#133a67] transition"
-      >
-        Save Link
-      </button>
-      {successMsg && (
-        <p className="text-green-600 text-sm text-center mt-2">Playlist saved! 💖</p>
-      )}
-      <div className="mt-4 px-3 py-3 bg-indigo-50 border border-indigo-300 rounded-md shadow text-center text-xs text-indigo-700 italic">
-        🎵 Think you have a hot playlist? <br />
-        Show us! Yours could be featured next…
-      </div>
-    </div>
-  }
+back={
+  <div className="bg-gradient-to-br from-[#f5f7fe] via-[#eaf7fa] to-[#e3f1fc] rounded-xl shadow-lg p-6 flex flex-col items-center justify-center min-h-[320px] max-w-lg w-full mx-auto">
+  <h4 className="text-base font-bold text-[#0a2540] mb-3 text-center">
+    Want to make a custom playlist for <span className="text-[#7d37fa]">{dateName}</span>?
+  </h4>
+  <input
+    type="text"
+    placeholder="Paste playlist link..."
+    value={customPlaylistUrl}
+    onChange={(e) => setCustomPlaylistUrl(e.target.value)}
+    className="w-full p-2 border border-indigo-100 rounded mb-2 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+  />
+  <button
+    onClick={handleSave}
+    className="w-full bg-[#0a2540] text-white py-2 rounded-lg font-semibold shadow hover:bg-[#133a67] transition"
+  >
+    Save Link
+  </button>
+  {successMsg && (
+    <p className="text-green-600 text-sm text-center mt-2">Playlist saved! 💖</p>
+  )}
+  <div className="mt-4 px-3 py-3 bg-indigo-50 border border-indigo-200 rounded-md shadow text-center text-xs text-indigo-700 italic w-full">
+    🎵 Think you have a hot playlist?<br />
+    <span className="font-semibold">Show us! Yours could be featured next…</span>
+  </div>
+</div>
+
+}
+
 />
 
 {randomClassicList.length > 0 && (
   <FlipCard
     front={
-      <div className="text-center">
-        <h3 className="text-xl font-bold mb-2">📍 A Local Classic</h3>
-        <p className="italic text-sm text-gray-300">
-          Tried and true, always worth it.
-        </p>
-      </div>
+   <div className="text-center p-6 h-full flex flex-col items-center justify-center">
+  <h3 className="text-xl font-bold mb-2">A Local Classic 📍</h3>
+  <p className="italic text-sm text-gray-300">
+    Tried and true, always worth it.
+  </p>
+</div>
+
     }
-    back={
-  <div className="p-4 bg-gradient-to-br from-white via-[#f3e8ff] to-[#e0f2fe] rounded-xl shadow-md text-sm text-[#0a2540] border border-white/60">
-
-
+back={
+  <div className="h-full w-full flex items-center justify-center p-0">
+    <div className="w-[96%] h-[90%] bg-gradient-to-br from-[#fff1f1] via-[#e0f2fe] to-[#f3e8ff] rounded-xl shadow-2xl shadow-purple-200/40 flex flex-col justify-center items-center text-center border border-purple-100/30">
+      <span className="text-lg mb-2 block">📍</span>
+      <div className="text-[#0a2540] font-bold mb-3">
         {randomClassicList.map((idea, i) => (
-          <p key={i}>• {idea}</p>
+          <p key={i} className="mb-2">• {idea}</p>
         ))}
-        <p className="text-xs italic text-gray-500 pt-2">
-          Local favorites are popular for a reason — but still feel personal when shared with the right person.
-        </p>
       </div>
-    }
+      <p className="text-xs italic text-purple-600 pt-2">
+        Local favorites never go out of style—especially with the right company!
+      </p>
+    </div>
+  </div>
+}
+
+
   />
 )}
 
@@ -497,20 +522,29 @@ front={
       <div className="text-center">
         <h3 className="text-xl font-bold mb-2">Hidden Gems 🌟</h3>
         <p className="italic text-sm text-gray-300">
-          Two secret spots to surprise your date with…
+          Two secret spots to surprise your date
         </p>
       </div>
     }
-    back={
-<div className="p-4 bg-gradient-to-br from-[#e0f2fe] via-[#d0f6f0] to-[#ccfbf1] rounded-xl shadow-md text-sm text-[#0a2540] border border-white/60">
-        {randomHiddenGemList.map((gem, i) => (
-          <p key={i}>• {gem}</p>
-        ))}
-        <p className="text-xs italic text-gray-500 pt-2">
-          The best spots are the ones you almost miss.
-        </p>
-      </div>
-    }
+back={
+  <div className="
+    bg-gradient-to-br from-white via-[#d0f4ff] to-[#8fd6ee]
+    h-full w-full rounded-xl shadow-2xl shadow-[#8fd6ee]/30
+    flex flex-col justify-center items-center
+    p-6 text-center
+  ">
+    <span className="text-xl block mb-3">🌟</span>
+    <div className="text-[#1571a6] font-semibold mb-4 text-base">
+      {randomHiddenGemList.map((idea, i) => (
+        <p key={i} className="mb-2">• {idea}</p>
+      ))}
+    </div>
+    <p className="text-xs italic text-sky-600 font-medium">
+      The best spots are the ones you almost miss.
+    </p>
+  </div>
+}
+
   />
 )}
 
@@ -527,19 +561,22 @@ front={
     </div>
   }
 back={
-  <div className="p-4 text-sm space-y-2 bg-gradient-to-br from-[#fffde7] via-[#fff9c4] to-[#fff59d] rounded-xl shadow-md text-[#0a2540] border border-white/60">
+  <div className="w-full h-full bg-gradient-to-br from-[#fdf6ec] via-[#f5e8d5] to-[#f5e9da] rounded-2xl shadow-xl text-[#6d4c1c] border border-[#ede0cb] p-8 flex flex-col justify-center">
     {randomLowCostList.map((idea, i) => (
-      <p key={i}>
+      <p key={i} className="mb-3">
         • {idea.replace(/{dateName}/g, dateName)}
       </p>
     ))}
+    <p className="text-xs italic text-[#a8894a] pt-4">
+      The best dates don’t need a big budget—just the right company.
+    </p>
   </div>
 }
 
+
+
 />
 
-
-{/* Magic from Friends */}
 {/* Magic from Friends */}
 {randomSpotlight?.title && (
   <FlipCard
@@ -549,31 +586,136 @@ back={
         <p className="text-sm">Click to reveal hand-picked love from us 💖</p>
       </div>
     }
-    back={
-      <div className="p-4 text-sm text-[#0a2540] space-y-3">
-        <h4 className="font-semibold text-lg">{randomSpotlight.title}</h4>
-        {randomSpotlight.blurb && <p>{randomSpotlight.blurb}</p>}
-        {randomSpotlight.url && (
-          <a
-            href={randomSpotlight.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm hover:bg-blue-700 transition"
-          >
-            {randomSpotlight.linkText || "Read More"}
-          </a>
-        )}
-      </div>
-    }
+back={
+  <div className="bg-gradient-to-br from-[#fff7ed] via-[#f7e7fd] to-[#ffd6e0] 
+    rounded-2xl shadow-xl p-8 
+    w-full h-full flex flex-col justify-center items-center 
+    border border-pink-100/40">
+    <span className="text-2xl mb-1">✨</span>
+    <h4 className="font-bold text-xl text-pink-600 drop-shadow mb-2">{randomSpotlight.title}</h4>
+    {randomSpotlight.blurb && (
+      <p className="text-[#7b325a] italic mb-3">{randomSpotlight.blurb}</p>
+    )}
+    {randomSpotlight.url && (
+      <a
+        href={randomSpotlight.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block bg-gradient-to-r from-pink-400 to-orange-300 text-white px-5 py-2 rounded-full text-base font-semibold shadow-md hover:scale-105 transition"
+      >
+        {randomSpotlight.linkText || "Learn More"}
+      </a>
+    )}
+  </div>
+}
+
+
+
   />
 )}
 
 
+{(userData.state === "NY" || userData.city?.toLowerCase().includes("new york")) && (
+  <FlipCard
+front={
+  <div className="bg-[#132044] rounded-xl shadow-2xl shadow-red-400/40 border border-red-400/60 h-full flex flex-col items-center justify-center p-6 text-center">
+    <span className="text-2xl mb-2 text-red-400">❤️</span>
+    <h3 className="text-xl font-bold text-red-500 mb-2 leading-tight text-center">
+      <span className="block">Staller Center</span>
+      <span className="block text-base font-semibold">at</span>
+      <span className="block text-base font-semibold">Stony Brook University</span>
+    </h3>
 
 
+        <p className="text-sm text-white/80 italic mb-1">
+          Our endless thanks to our friends at Staller Center at Stony Brook University.
+        </p>
+        <span className="inline-block text-xs font-semibold text-red-200 mt-2">✨NY Exclusive</span>
+      </div>
+    }
+    back={
+    <div className="bg-[#132044] rounded-xl shadow-2xl shadow-red-300/40 h-full flex flex-col items-center justify-center p-6 text-center border border-white/10">
+  <h4 className="text-md font-bold text-red-400 mb-2 drop-shadow-[0_0_8px_#ef4444]">
+    Catch a Show!
+  </h4>
+  <p className="text-sm text-white/90 mb-3">
+    Discover music, theater, dance, and more at Staller Center this season. Plan a date or just treat yourself!
+  </p>
+  <a
+    href="https://www.stallercenter.com/Calendar.php"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition mb-2 shadow-lg drop-shadow-[0_0_10px_#ef4444]"
+  >
+    See Shows & Get Tickets
+  </a>
+  <div className="mt-2 text-xs text-red-300 italic">
+    Go score your tickets! We'll save your spot here! ❤️
+  </div>
+</div>
+
+    }
+    disableFlipOnBack={true}
+  />
+)}
 
 
-{userData.state === "NY" && <LongIslandMusicFlipCard town={userData.city} />}
+{(userData.state === "NY" || userData.city?.toLowerCase().includes("new york")) && (
+  <FlipCard
+    disableFlipOnBack={true}
+    front={
+      <div className="bg-[#132044] rounded-xl shadow-2xl shadow-[#7FFFD4]/40 h-full flex flex-col items-center justify-center p-6 text-center border border-white/10">
+        <span className="text-3xl mb-2 text-[#7FFFD4]">🎶🌊</span>
+        <h3 className="text-lg font-bold text-[#7FFFD4] mb-2">Special Events</h3>
+        <p className="text-sm text-white/80 italic mb-1">
+          Discover gigs & events happening near you!
+        </p>
+        <span className="inline-block text-xs font-semibold text-[#7FFFD4] mt-2">
+          For NY Locals
+        </span>
+      </div>
+    }
+    back={
+      <div className="bg-[#132044] rounded-xl shadow-2xl shadow-[#7FFFD4]/40 h-full flex flex-col items-center justify-center p-6 text-center border border-white/10">
+        <h4 className="text-md font-bold text-[#7FFFD4] mb-2 drop-shadow-[0_0_8px_#7FFFD4]">
+          Live and Local!
+        </h4>
+        {visibleEvents.map((event, i) => (
+          <div key={i} className="border-b border-[#7FFFD4]/50 pb-2 last:border-0 mb-2">
+            <p className="font-semibold text-white">{event.Band}</p>
+            <p className="text-[#7FFFD4]">{event.Venue}</p>
+        <p className="italic text-xs text-[#7FFFD4]/80">
+  {event.Date
+    ? new Date(event.Date).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      })
+    : ""}
+</p>
+
+            {event.Url && (
+              <a
+                href={event.Url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-[#7FFFD4] text-[#132044] px-3 py-1 rounded-full text-xs font-semibold hover:bg-[#5eead4] transition mt-1 shadow drop-shadow-[0_0_6px_#7FFFD4]"
+              >
+                More Info
+              </a>
+            )}
+          </div>
+        ))}
+        <div className="mt-2 text-xs text-[#7FFFD4] italic">
+          Hit up a show, support local legends and maybe, you might end up liking a new song. Or even better - someone who rocks your world.
+
+
+        </div>
+      </div>
+    }
+  />
+)}
 
 
 
@@ -603,7 +745,7 @@ back={
       <div className="bg-white/60 border-l-4 border-pink-400 rounded-lg p-4 shadow mb-2">
         <p className="text-sm font-bold text-pink-700 mb-1">🌟 Featured Love Story</p>
         <p className="italic text-[#aa276b] mb-2">
-          “We used this app on our 2nd coffee date and laughed over the conversation cards for hours.”
+          “This is such a fun app. We laughed over the conversation cards for hours.”
         </p>
         <p className="text-xs text-gray-700 text-right">— Anna, Los Angeles, CA</p>
       </div>

@@ -220,7 +220,7 @@ const gamesToShow = validBigGames.slice(0, 4);
       ))}
 
     <p className="text-center text-white/40 italic text-xs mt-6">
-      Powered by APIs and RSS feeds… until Apple returns our call. ☎️🍎
+      Powered by APIs and RSS feeds
     </p>
   </section>
 ) : (
@@ -247,7 +247,7 @@ const gamesToShow = validBigGames.slice(0, 4);
         ))}
 
     <p className="text-center text-white/40 italic text-xs mt-6">
-      Powered by hand-picked headlines… and a strong hint of hope that Apple emails us back soon  🍎 
+      Powered by hand-picked headlines… because great conversations deserve great headlines. 
     </p>
   </section>
 )}

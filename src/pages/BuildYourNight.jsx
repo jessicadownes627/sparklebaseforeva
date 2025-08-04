@@ -12,52 +12,53 @@ const questions = [
     key: "relationshipStatus",
     question: "What is your relationship status?",
     options: [
-      { label: "First Date", value: "firstDate" },
-      { label: "Dating", value: "dating" },
-      { label: "Married / Long-Term", value: "longTerm" },
-      { label: "Just Friends", value: "justFriends" },
+      { label: "First Date", value: "firstDate", message: "New connections—how exciting! ✨" },
+      { label: "Dating", value: "dating", message: "Love is in the air! 💕" },
+      { label: "Married / Long-Term", value: "longTerm", message: "A love story with chapters. 📚" },
+      { label: "Just Friends", value: "justFriends", message: "Friends have the best fun! 🤗" },
     ],
   },
   {
     key: "dateVibe",
     question: "What kind of date would you like?",
     options: [
-      { label: "Romantic", value: "romantic" },
-      { label: "Fun", value: "fun" },
-      { label: "Chill", value: "chill" },
-      { label: "Adventurous", value: "adventurous" },
+      { label: "Romantic", value: "romantic", message: "Sparks are flying already! ❤️" },
+      { label: "Fun", value: "fun", message: "Laughter guaranteed! 😄" },
+      { label: "Chill", value: "chill", message: "Low-key vibes are the best. 😌" },
+      { label: "Adventurous", value: "adventurous", message: "Bring on the adventure! 🌟" },
     ],
   },
   {
     key: "foodStyle",
     question: "What kind of food experience are you in the mood for?",
     options: [
-      { label: "Keep It Casual", value: "casual" },
-      { label: "A Meal with Ambience", value: "fancy" },
-      { label: "Drinks or Dessert", value: "drinks" },
-      { label: "Surprise Me", value: "mix" },
+      { label: "Keep It Casual", value: "casual", message: "Laid-back and easy—love it! 😎" },
+      { label: "A Meal with Ambience", value: "fancy", message: "Ambience makes all the difference. ✨" },
+      { label: "Drinks or Dessert", value: "drinks", message: "Sweet choice! 🍰" },
+      { label: "Surprise Me", value: "mix", message: "Adventurous! You’re keeping things interesting. 🎲" },
     ],
   },
   {
     key: "timeOfDay",
     question: "When are you heading out?",
     options: [
-      { label: "Morning", value: "morning" },
-      { label: "Afternoon", value: "afternoon" },
-      { label: "Evening", value: "evening" },
+      { label: "Morning", value: "morning", message: "Rise and shine! ☀️" },
+      { label: "Afternoon", value: "afternoon", message: "Perfect timing! 🍹" },
+      { label: "Evening", value: "evening", message: "Night owls unite! 🌙" },
     ],
   },
   {
     key: "outfitStyle",
     question: "What's your outfit vibe?",
     options: [
-      "Laid-back & Easy",
-      "Confident & Sharp",
-      "Statement Look",
-      "Playful & Polished",
+      { label: "Laid-back & Easy", value: "laidback", message: "Effortlessly cool. 😎" },
+      { label: "Confident & Sharp", value: "sharp", message: "You’re bringing your A-game! 💪" },
+      { label: "Statement Look", value: "statement", message: "Turning heads, we see you! 🔥" },
+      { label: "Playful & Polished", value: "playful", message: "Fun and flawless—perfection! 🎉" },
     ],
   },
 ];
+
 
 const BuildYourNight = () => {
   const navigate = useNavigate();
@@ -121,31 +122,53 @@ const finalData = { ...userData, ...answers, city, state, energy };
           </motion.button>
         ))}
 
-        <AnimatePresence mode="wait">
-          {currentIndex < questions.length && (
-            <motion.div key={questions[currentIndex].key} className="bg-white/90 p-6 rounded-2xl shadow-xl">
-              <p className="text-sm text-center mb-2">Question {currentIndex + 1} of {questions.length}</p>
-              <h2 className="text-xl text-center font-semibold mb-4">{questions[currentIndex].question}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {questions[currentIndex].options.map((opt) => {
-                  const label = typeof opt === "object" ? opt.label : opt;
-                  const value = typeof opt === "object" ? opt.value : opt;
-                  return (
-                    <button key={value} onClick={() => handleSelect(questions[currentIndex].key, value)} className={`bg-white text-[#0a2540] border px-4 py-2 rounded-xl text-sm shadow ${answers[questions[currentIndex].key] === value ? "ring-2 ring-purple-400" : ""}`}>{label}</button>
-                  );
-                })}
-              </div>
-              {questions[currentIndex].key === "outfitStyle" && (
-                <button onClick={handleOutfitContinue} className="mt-4 w-full py-2 bg-purple-500 text-white rounded-xl">Continue</button>
-              )}
-              {currentIndex > 0 && (
-                <button onClick={handleBack} className="mt-4 text-sm underline text-gray-500 hover:text-purple-600">
-                  ← Go Back
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+    <AnimatePresence mode="wait">
+  {currentIndex < questions.length && (
+    <motion.div key={questions[currentIndex].key} className="bg-white/90 p-6 rounded-2xl shadow-xl">
+      <p className="text-sm text-center mb-2">Question {currentIndex + 1} of {questions.length}</p>
+      <h2 className="text-xl text-center font-semibold mb-4">{questions[currentIndex].question}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {questions[currentIndex].options.map((opt) => {
+          const label = typeof opt === "object" ? opt.label : opt;
+          const value = typeof opt === "object" ? opt.value : opt;
+          return (
+            <button
+              key={value}
+              onClick={() => handleSelect(questions[currentIndex].key, value)}
+              className={`bg-white text-[#0a2540] border px-4 py-2 rounded-xl text-sm shadow ${answers[questions[currentIndex].key] === value ? "ring-2 ring-purple-400" : ""}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      
+      {/* <<< ADD THIS BELOW THE BUTTONS >>> */}
+      {answers[questions[currentIndex].key] && (() => {
+        const selectedValue = answers[questions[currentIndex].key];
+        const selectedOptionObj = questions[currentIndex].options.find(
+          opt => (typeof opt === "object" ? opt.value : opt) === selectedValue
+        );
+        return selectedOptionObj?.message ? (
+          <p className="text-xs text-pink-400 mt-4 italic text-center transition-all">
+            {selectedOptionObj.message}
+          </p>
+        ) : null;
+      })()}
+      {/* <<< END AFFIRMATION MESSAGE >>> */}
+
+      {questions[currentIndex].key === "outfitStyle" && (
+        <button onClick={handleOutfitContinue} className="mt-4 w-full py-2 bg-purple-500 text-white rounded-xl">Continue</button>
+      )}
+      {currentIndex > 0 && (
+        <button onClick={handleBack} className="mt-4 text-sm underline text-gray-500 hover:text-purple-600">
+          ← Go Back
+        </button>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
         {currentIndex >= questions.length && (
           <motion.div className="bg-white/90 p-6 rounded-2xl shadow-xl">
