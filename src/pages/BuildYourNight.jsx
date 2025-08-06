@@ -77,7 +77,7 @@ const BuildYourNight = () => {
     if (key !== "outfitStyle") {
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
-      }, 2000); // small delay to show affirmation message
+      }, 1500); // small delay to show affirmation message
     }
   };
 
