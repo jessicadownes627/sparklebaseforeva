@@ -173,15 +173,16 @@ const gamesToShow = validBigGames.slice(0, 4);
         </div>
   
 
-      {/* TAPinto headlines */}
-      {tapintoHeadlines.length > 0 && (
-        <section className="relative rounded-xl p-4 bg-[#0a2540] text-white shadow border border-white/20 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-60 pointer-events-none z-0" />
-          <div className="relative z-10">
-            <TapIntoCard city={city} theme="dark" textColor="text-white" />
-          </div>
-        </section>
-      )}
+ {/* TAPinto headlines */}
+{tapintoHeadlines.length > 0 && (
+  <section className="relative rounded-xl px-4 py-6 bg-[#0a2540] text-white shadow border border-white/20 overflow-hidden">
+    <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-60 pointer-events-none z-0" />
+    <div className="relative z-10 max-w-md mx-auto">
+      <TapIntoCard city={city} theme="dark" textColor="text-white" />
+    </div>
+  </section>
+)}
+
 
 
 {/* LiveWire or fallback */}

@@ -233,6 +233,10 @@ const BuildYourNight = () => {
                     </option>
                   ))}
                 </select>
+                <p className="text-center text-xs text-gray-400 italic mb-4">
+  We’re just getting started — more cities and magic coming soon 💫
+</p>
+
               </>
             )}
 

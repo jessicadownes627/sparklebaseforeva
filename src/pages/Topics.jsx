@@ -153,14 +153,19 @@ const handleSubmit = () => {
       </div>
 
       {/* Subtopics */}
-      {selectedTopics.length > 0 && (
-        <div className="mt-10 border-t border-white/30 pt-6">
-          <h3 className="text-center text-xl font-semibold mb-4 text-indigo-700">
-            ✨ A little extra magic...
-          </h3>
-          <p className="text-sm text-center text-gray-500 italic mb-6">
-            Click up to 2 subtopics per category to guide what shows up on your News page.
-          </p>
+{/* Subtopics */}
+{selectedTopics.length > 0 && (
+  <div className="mt-10 border-t border-white/30 pt-6">
+    <h3 className="text-center text-xl font-semibold mb-4 text-indigo-700">
+      ✨ A little extra magic...
+    </h3>
+    <p className="text-lg text-center text-gray-500 italic mb-2">
+      Click up to 2 subtopics per category to guide what shows up on your News page, {userName}.
+    </p>
+    <p className="text-sm text-center text-gray-400 italic mb-6">
+      We can’t promise world peace… but we’ll keep the headlines date-worthy 💌
+    </p>
+
 
           {selectedTopics.map((topic) =>
             subtopicOptions[topic] ? (

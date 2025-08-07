@@ -1,5 +1,5 @@
 // ✅ Events.jsx — full version with ALL sparkle, “Want to Be Featured” section, NY events, playlist cards, custom/featured playlist, and final call-to-action!
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext.jsx";
 import PageHeader from "../components/PageHeader";
@@ -90,26 +90,29 @@ const Events = () => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState("feminine");
   const [friendsSpotlight, setFriendsSpotlight] = useState([]);
-  const [randomSpotlight, setRandomSpotlight] = useState(null);
   const [featuredPlaylistData, setFeaturedPlaylistData] = useState(null);
 
-  // Friends Spotlight logic
-  const permanentSpotlight = friendsSpotlight.find((f) =>
+ // Friends Spotlight logic (✨ with useMemo)
+const permanentSpotlight = useMemo(() => {
+  return friendsSpotlight.find((f) =>
     f?.title?.toLowerCase().includes("talk more")
   );
-  const rotatingSpotlights = friendsSpotlight.filter((f) =>
-    f?.title && f.title !== permanentSpotlight?.title
-  );
+}, [friendsSpotlight]);
 
-  useEffect(() => {
-    if (rotatingSpotlights.length > 0) {
-      setRandomSpotlight(
-        rotatingSpotlights[Math.floor(Math.random() * rotatingSpotlights.length)]
-      );
-    } else {
-      setRandomSpotlight(null);
-    }
-  }, [rotatingSpotlights]);
+const rotatingSpotlights = useMemo(() => {
+  return friendsSpotlight.filter(
+    (f) => f?.title && f.title !== permanentSpotlight?.title
+  );
+}, [friendsSpotlight, permanentSpotlight]);
+
+const randomSpotlight = useMemo(() => {
+  if (rotatingSpotlights.length > 0) {
+    const index = Math.floor(Math.random() * rotatingSpotlights.length);
+    return rotatingSpotlights[index];
+  }
+  return null;
+}, [rotatingSpotlights]);
+
 
   useEffect(() => {
     fetchFriendsSpotlightFromSheet()
@@ -173,16 +176,25 @@ const Events = () => {
   }, []);
 
   // Classic & Hidden Gems — randomize with city
-  useEffect(() => {
-    const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random());
-    const classicRaw = Array.isArray(cityIdeasRaw)
-      ? cityIdeasRaw
-      : cityIdeasRaw
-      ? [cityIdeasRaw]
-      : [];
-    setRandomClassicList(shuffleArray(classicRaw).slice(0, 2));
-    setRandomHiddenGemList(shuffleArray(hiddenGemsRaw).slice(0, 2));
-  }, [cityKey, cityIdeasRaw, hiddenGemsRaw]);
+useEffect(() => {
+  const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random());
+
+  const classicRaw = Array.isArray(cityIdeasRaw)
+    ? cityIdeasRaw
+    : cityIdeasRaw
+    ? [cityIdeasRaw]
+    : [];
+
+  const hiddenGemRaw = Array.isArray(hiddenGemsRaw)
+    ? hiddenGemsRaw
+    : hiddenGemsRaw
+    ? [hiddenGemsRaw]
+    : [];
+
+  setRandomClassicList((prev) => prev.length > 0 ? prev : shuffleArray(classicRaw).slice(0, 2));
+  setRandomHiddenGemList((prev) => prev.length > 0 ? prev : shuffleArray(hiddenGemRaw).slice(0, 2));
+}, [cityKey]);
+
 
   const showLongIsland =
     cityKey === "Long Island, NY" ||
@@ -449,32 +461,33 @@ const Events = () => {
 
         {/* 📍 Local Classics */}
         {randomClassicList.length > 0 && (
-          <FlipCard
-            front={
-              <div className="text-center p-6 h-full flex flex-col items-center justify-center">
-                <h3 className="text-xl font-bold mb-2">Local Classics 📍</h3>
-                <p className="italic text-sm text-gray-300">
-                  Tried and true, always worth it.
-                </p>
-              </div>
-            }
-            back={
-              <div className="h-full w-full flex items-center justify-center p-0">
-                <div className="w-[96%] h-[90%] bg-gradient-to-br from-[#fff1f1] via-[#e0f2fe] to-[#f3e8ff] rounded-xl shadow-2xl shadow-purple-200/40 flex flex-col justify-center items-center text-center border border-purple-100/30">
-                  <span className="text-lg mb-2 block">📍</span>
-                  <div className="text-[#0a2540] font-bold mb-3">
-                    {randomClassicList.map((idea, i) => (
-                      <p key={i} className="mb-2">• {idea}</p>
-                    ))}
-                  </div>
-                  <p className="text-xs italic text-purple-600 pt-2">
-                    Local favorites never go out of style—especially with the right company!
-                  </p>
-                </div>
-              </div>
-            }
-          />
-        )}
+  <FlipCard
+    front={
+      <div className="text-center p-6 h-full flex flex-col items-center justify-center">
+        <h3 className="text-xl font-bold mb-2">Local Classics 📍</h3>
+        <p className="italic text-sm text-gray-300">
+          Tried and true, always worth it.
+        </p>
+      </div>
+    }
+    back={
+      <div className="h-full w-full flex items-center justify-center p-0">
+        <div className="w-[96%] h-[90%] bg-gradient-to-br from-[#fff1f1] via-[#e0f2fe] to-[#f3e8ff] rounded-xl shadow-2xl shadow-purple-200/40 flex flex-col justify-center items-center text-center border border-purple-100/30">
+          <span className="text-lg mb-2 block">📍</span>
+          <div className="text-[#0a2540] font-bold mb-3">
+            {randomClassicList.map((idea, i) => (
+              <p key={i} className="mb-2">• {idea}</p>
+            ))}
+          </div>
+          <p className="text-xs italic text-purple-600 pt-2">
+            Local favorites never go out of style—especially with the right company!
+          </p>
+        </div>
+      </div>
+    }
+  />
+)}
+
 
         {/* 🌟 Hidden Gems */}
         {randomHiddenGemList.length > 0 && (
@@ -514,7 +527,7 @@ const Events = () => {
             <div>
               <h3 className="text-xl font-bold mb-3">Free / Low-Cost Ideas 💡</h3>
               <p className="text-sm">
-                Your date doesn't need a price tag to be unforgettable 💕
+                Unforgettable moments don't need a price tag 💕
               </p>
             </div>
           }
@@ -532,39 +545,43 @@ const Events = () => {
           }
         />
 
-        {/* ✨ Magic from Friends */}
-        {randomSpotlight?.title && (
-          <FlipCard
-            front={
-              <div>
-                <h3 className="text-xl font-bold mb-3">Magic from Friends ✨</h3>
-                <p className="text-sm">Click to reveal hand-picked love from us 💖</p>
-              </div>
-            }
-            back={
-              <div className="bg-gradient-to-br from-[#fff7ed] via-[#f7e7fd] to-[#ffd6e0] 
-                rounded-2xl shadow-xl p-8 
-                w-full h-full flex flex-col justify-center items-center 
-                border border-pink-100/40">
-                <span className="text-2xl mb-1">✨</span>
-                <h4 className="font-bold text-xl text-pink-600 drop-shadow mb-2">{randomSpotlight.title}</h4>
-                {randomSpotlight.blurb && (
-                  <p className="text-[#7b325a] italic mb-3">{randomSpotlight.blurb}</p>
-                )}
-                {randomSpotlight.url && (
-                  <a
-                    href={randomSpotlight.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block bg-gradient-to-r from-pink-400 to-orange-300 text-white px-5 py-2 rounded-full text-base font-semibold shadow-md hover:scale-105 transition"
-                  >
-                    {randomSpotlight.linkText || "Learn More"}
-                  </a>
-                )}
-              </div>
-            }
-          />
+
+ {/* ✨ Magic from Friends */}
+{/* ✨ Magic from Friends */}
+{randomSpotlight?.title && (
+  <FlipCard
+    front={
+      <div>
+        <h3 className="text-xl font-bold mb-3">Magic from Friends ✨</h3>
+        <p className="text-sm">Click to reveal hand-picked love from us 💖</p>
+      </div>
+    }
+    back={
+      <div className="bg-gradient-to-br from-[#fff7ed] via-[#f7e7fd] to-[#ffd6e0] 
+        rounded-2xl shadow-xl p-8 
+        w-full h-full flex flex-col justify-center items-center 
+        border border-pink-100/40">
+        <span className="text-2xl mb-1">✨</span>
+        <h4 className="font-bold text-xl text-pink-600 drop-shadow mb-2">{randomSpotlight.title}</h4>
+        {randomSpotlight.blurb && (
+          <p className="text-[#7b325a] italic mb-3">{randomSpotlight.blurb}</p>
         )}
+        {randomSpotlight.url && (
+          <a
+            href={randomSpotlight.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-gradient-to-r from-pink-400 to-orange-300 text-white px-5 py-2 rounded-full text-base font-semibold shadow-md hover:scale-105 transition"
+          >
+            {randomSpotlight.linkText || "Learn More"}
+          </a>
+        )}
+      </div>
+    }
+  />
+)}
+
+      
 
         {/* ❤️ Staller Center NY-Exclusive */}
         {(userData.state === "NY" || userData.city?.toLowerCase().includes("new york")) && (
@@ -707,7 +724,7 @@ const Events = () => {
       </div>
 
 
-i{/* Jazzed Up Navy & Lavender Checklist */}
+{/* Jazzed Up Navy & Lavender Checklist */}
 <div
   className="max-w-xl mx-auto my-8 p-4 rounded-2xl shadow-lg border"
   style={{
@@ -767,23 +784,28 @@ i{/* Jazzed Up Navy & Lavender Checklist */}
       initial={{ opacity: 0, scale: 0.7 }}
       animate={{ opacity: 1, scale: [1, 1.14, 1] }}
       transition={{ delay: 1.1, repeat: Infinity, repeatDelay: 2, duration: 0.7 }}
-      className="font-bold flex items-center"
+      className="font-bold text-center"
       style={{ color: "#e5d6fa" }}
     >
-      <span role="img" aria-label="fire" style={{ color: "#a788ff", fontSize: "1.18em", marginRight: "0.5em" }}>🔥</span>
-      Date’s prepped… now let’s make it <span className="italic ml-1" style={{ color: "#fff" }}>legendary.</span>
-    </motion.li>
+      <span role="img" aria-label="fire" style={{ marginRight: "0.5em" }}>💫</span>
+  Date’s prepped… now let’s{' '}
+  <span className="italic whitespace-nowrap" style={{ color: "#fff" }}>
+    make it legendary.
+  </span>
+</motion.li>
   </ul>
 </div>
 
 {/* FINAL call to action (jazzed up, less redundant) */}
 <div className="max-w-xl mx-auto bg-white/40 backdrop-blur-md border border-[#c1b4f7] rounded-2xl p-7 shadow-lg mt-12 text-center">
-  <p className="text-lg" style={{ color: "#7c69a4" }}>
-    You’re ready for an epic night, <span className="font-semibold">{userName}</span>!  
-    <span role="img" aria-label="magic">💫</span>
+  <p className="text-lg font-medium" style={{ color: "#7c69a4" }}>
+    'Fit’s on fire. Playlist is ready. Vibe? Immaculate.  
+    <span role="img" aria-label="sparkle">💫</span>
   </p>
   <p className="text-md font-bold mb-4 mt-4" style={{ color: "#16213e" }}>
-    What are you going to talk about? Here’s a killer convo starter…  
+    Now for the fun part, {userName}…  
+    <br />
+    What are you and {dateName} going to talk about?  
     <span role="img" aria-label="chat">💬</span>
   </p>
   <button
@@ -791,9 +813,11 @@ i{/* Jazzed Up Navy & Lavender Checklist */}
     className="mx-auto block bg-gradient-to-r from-indigo-700 to-purple-400 hover:from-indigo-800 hover:to-purple-500 text-white px-6 py-3 rounded-full font-semibold shadow-md transition"
     style={{ letterSpacing: "0.02em", fontSize: "1.18em" }}
   >
-    Topics are coming in hot! ➡️
+    Hot Topics Ahead 🔥
   </button>
 </div>
+
+
 
     </div>
   );
