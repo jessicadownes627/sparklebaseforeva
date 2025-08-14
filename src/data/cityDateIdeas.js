@@ -582,6 +582,20 @@ const cityDateIdeas = {
     "Visit Fire Island Lighthouse."
   ],
 
+"Los Angeles, CA": [
+  "Catch golden hour at Griffith Observatory, then tacos on Vermont Ave.",
+  "Mural + coffee hop in the Arts District along Mateo & 3rd.",
+  "Sunset picnic at El Matador Beach — blanket + easy shoes.",
+  "Explore The Getty Center gardens and galleries (free admission).",
+  "Stroll The Grove & Farmers Market; split something sweet.",
+  "Jazz or comedy night in Downtown LA — keep it light and flirty.",
+  "Bike ride from Santa Monica Pier to Venice Beach Boardwalk.",
+  "Wander Grand Central Market for bites and people-watching.",
+  "Drive Mulholland for night views of the sparkling city lights.",
+  "Rooftop drinks at Perch with live music under the stars."
+],
+
+
   "Louisville, KY": [
     "Dine at rooftop restaurants.",
     "Walk Big Four Bridge at sunset.",

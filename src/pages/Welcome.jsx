@@ -1,9 +1,8 @@
 // src/pages/Welcome.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
-import { useUser } from "../context/UserContext"; // Correct context usage
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 import { motion } from "framer-motion";
-import energyThemes from "../data/energyThemes";
 
 const energyStyles = {
   "Dreamy ✨": {
@@ -34,16 +33,16 @@ const Welcome = () => {
   const handleStart = () => {
     if (!isComplete) return;
     setUserData({ userName, dateName, energy, when });
-    navigate("/build-your-night"); // Navigate to Build Your Night page
+    navigate("/build-your-night");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200 text-midnight flex flex-col justify-center items-center px-4 py-10 animate-fadeIn">
+    <div className="min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200 text-midnight flex flex-col justify-center items-center px-4 py-10">
+      {/* Keep your original header + subhead */}
       <h1 className="text-5xl font-script drop-shadow-glow text-center mb-2">
         Talk More Tonight
       </h1>
-
-      <p className="text-center text-base mb-4 opacity-80 italic">
+      <p className="text-center text-base mb-6 opacity-80 italic">
         ✨ Talk to us... before you talk to them. ✨
       </p>
 
@@ -121,6 +120,17 @@ const Welcome = () => {
         >
           Let’s Talk
         </button>
+
+        {/* subtle, pretty disclaimer */}
+        <p className="text-[11px] text-center text-violet-600 mt-3 leading-snug">
+          <span className="font-medium text-violet-700">Heads-up:</span>{" "}
+          some news and topics may reference alcohol, gambling, or other{" "}
+          <span className="italic">real-world themes</span>.{" "}
+          <span className="underline decoration-dotted underline-offset-2">
+            Take what serves you
+          </span>
+          , skip what doesn’t. <span aria-hidden>💖</span>
+        </p>
       </motion.div>
     </div>
   );

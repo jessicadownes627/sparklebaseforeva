@@ -454,6 +454,19 @@ const cityHiddenGems = {
     "Visit the Fire Island Lighthouse and its hidden nearby trails."
   ],
 
+"Los Angeles, CA": [
+  "Self-Realization Fellowship Lake Shrine — peaceful walk + koi ponds.",
+  "The Old Zoo ruins in Griffith Park — quirky photo spot with history.",
+  "Barnsdall Art Park lawn hang with sweeping city views.",
+  "Descanso Gardens twilight stroll when evenings are open.",
+  "Secret Swing in Elysian Park — bring a camera for the skyline view.",
+  "Culver City Stairs — quick cardio with a stunning sunset payoff.",
+  "Hike to Amir's Garden in Griffith Park for a colorful hidden oasis.",
+  "Take the Angels Flight funicular and explore hidden alleys nearby.",
+  "Mosaic Tile House in Venice — wild colors and photo-ready corners.",
+  "Echo Park pedal boats at dusk with the fountain lights glowing."
+],
+
   "Louisville, KY": [
     "Find secret speakeasy bars in the NuLu neighborhood.",
     "Visit the Louisville Mega Cavern’s underground zipline.",

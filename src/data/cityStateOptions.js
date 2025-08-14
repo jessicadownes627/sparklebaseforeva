@@ -193,6 +193,7 @@ const stateCityOptions = {
     "Fresno",
     "Irvine",
     "Long Beach",
+    "Los Angeles",
     "Oakland",
     "Riverside",
     "Sacramento",

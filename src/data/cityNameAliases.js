@@ -58,6 +58,7 @@ const cityNameAliases = {
   "lincoln": "Lincoln, NE",
   "little rock": "Little Rock, AR",
   "long beach": "Long Beach, CA",
+  "los angeles": "Los Angeles, CA", 
   "louisville": "Louisville, KY",
   "lubbock": "Lubbock, TX",
   "madison": "Madison, WI",
