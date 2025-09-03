@@ -194,7 +194,7 @@ const News = () => {
               {topicEmojiMap[topic]} {topic}
             </h4>
             {liveHeadlines[topic] && liveHeadlines[topic].length > 0 ? (
-              liveHeadlines[topic].slice(0, 3).map((article, i) => (
+              liveHeadlines[topic].map((article, i) => (
                 <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
                   <span className="block font-bold">{article.title}</span>
                   <p className="text-gray-300">{article.description}</p>
@@ -204,7 +204,7 @@ const News = () => {
                 </div>
               ))
             ) : (
-              (curatedFallbacks[topic] || []).slice(0, 3).map((story, i) => (
+              (curatedFallbacks[topic] || []).map((story, i) => (
                 <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
                   <span className="block font-bold">{story.title}</span>
                   <p className="text-gray-300">{story.description}</p>
@@ -221,40 +221,21 @@ const News = () => {
       {/* Hot Sheet */}
       <section className="rounded-2xl px-6 py-8 bg-black shadow max-w-5xl mx-auto mb-10">
         <h3 className="text-2xl font-bold mb-6">🔥 The Hot Sheet</h3>
-        {Object.keys(hotSheet).length > 0 ? (
-          Object.keys(hotSheet).map((subtopic) => (
-            <div key={subtopic} className="mb-6">
-              <h4 className="text-lg font-semibold mb-2">{subtopic}</h4>
-              {hotSheet[subtopic].map((entry, i) => (
-                <div key={i} className="bg-[#1a1a1a] p-4 rounded-md mb-3 shadow text-sm">
-                  <p className="font-bold">{entry.summary}</p>
-                  <p className="text-gray-300">{entry.fact}</p>
-                  <p className="italic text-gray-400">{entry.ask}</p>
-                </div>
-              ))}
-            </div>
-          ))
-        ) : (
-          <div className="bg-[#1a1a1a] p-6 rounded-md text-center text-sm text-gray-300">
-            <p className="mb-2 font-bold">No Hot Sheet picks tonight.</p>
-            <p>
-              👉 Check what’s trending instead on{" "}
-              <a
-                href="https://trends.google.com/trends/trendingsearches/daily?geo=US"
-                target="_blank"
-                rel="noreferrer"
-                className="underline text-blue-400"
-              >
-                Google Trends
-              </a>
-            </p>
+        {Object.keys(hotSheet).map((subtopic) => (
+          <div key={subtopic} className="mb-6">
+            <h4 className="text-lg font-semibold mb-2">{subtopic}</h4>
+            {hotSheet[subtopic].map((entry, i) => (
+              <div key={i} className="bg-[#1a1a1a] p-4 rounded-md mb-3 shadow text-sm">
+                <p className="font-bold">{entry.summary}</p>
+                <p className="text-gray-300">{entry.fact}</p>
+                <p className="italic text-gray-400">{entry.ask}</p>
+              </div>
+            ))}
           </div>
-        )}
+        ))}
       </section>
 
-
-
-      {/* Sports + Deck + Brighter Side */}
+      {/* 3 Columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">

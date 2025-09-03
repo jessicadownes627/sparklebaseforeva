@@ -92,8 +92,6 @@ const stateCityOptions = {
     "North Plainfield",
     "Nutley",
     "Orange",
-    "Olean",
-    "Parkland",
     "Paramus",
     "Parsippany",
     "Paterson",
@@ -167,6 +165,7 @@ const stateCityOptions = {
     "New York City",
     "Northport",
     "Oceanside",
+    "Olean", 
     "Oyster Bay",
     "Patchogue",
     "Port Jefferson",
@@ -204,7 +203,7 @@ const stateCityOptions = {
 
   CO: ["Colorado Springs", "Denver"].sort(),
 
-  FL: ["Hialeah", "Miami", "Orlando"].sort(),
+  FL: ["Hialeah", "Parkland", "Coral Springs", "Coconut Creek", "Miami", "Orlando"].sort(),
 
   GA: ["Atlanta", "Savannah"].sort(),
 
@@ -244,7 +243,7 @@ const stateCityOptions = {
 
   OR: ["Portland"],
 
-  PA: ["Pittsburgh"],
+  PA: ["Pittsburgh", "Doylestown"],
 
   TX: [
     "Arlington",

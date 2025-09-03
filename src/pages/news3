@@ -1,0 +1,142 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+
+// Utils
+import getLiveWireHeadlines from "../utils/getLiveWireHeadlines";
+import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFromSheet";
+
+// Data
+import topicEmojiMap from "../data/topicEmojiMap";
+
+const News = () => {
+  const navigate = useNavigate();
+  const { userData } = useUser();
+  const { selectedTopics = [], dateName } = userData;
+
+  const [liveHeadlines, setLiveHeadlines] = useState({});
+  const [curatedFallbacks, setCuratedFallbacks] = useState({});
+
+  // --- LiveWire (RSS → NewsData)
+  useEffect(() => {
+    const loadHeadlines = async () => {
+      try {
+        const headlines = await getLiveWireHeadlines({ topics: selectedTopics });
+        setLiveHeadlines(headlines || {});
+      } catch (err) {
+        console.error("LiveWire error", err);
+        setLiveHeadlines({});
+      }
+    };
+    loadHeadlines();
+  }, [selectedTopics]);
+
+  // --- Curated fallback (Google Sheet)
+  useEffect(() => {
+    const loadFallbacks = async () => {
+      try {
+        const fb = await fetchCuratedFallbacksFromSheet();
+        setCuratedFallbacks(fb || {});
+      } catch (err) {
+        console.error("Curated fallback error", err);
+        setCuratedFallbacks({});
+      }
+    };
+    loadFallbacks();
+  }, []);
+
+  return (
+    <div className="px-4 py-10 text-white bg-gradient-to-br from-black via-[#0f172a] to-[#312e81]">
+      <section className="rounded-2xl px-6 py-8 bg-[#1a2333] shadow max-w-5xl mx-auto mb-10">
+        <h3 className="text-2xl font-bold mb-4">📰 Tonight’s Headlines</h3>
+        <p className="text-gray-300 mb-6 italic">
+          Not every article will be a match — kinda like dating 😉
+        </p>
+
+        {selectedTopics.map((topic) => {
+          const cleanTopic = topic.replace(
+            /[\p{Emoji_Presentation}\p{Emoji}\uFE0F]/gu,
+            ""
+          ).trim();
+
+          const articles = liveHeadlines[topic] || [];
+          const fallbacks = curatedFallbacks[topic] || [];
+
+          // Debug logging per topic
+          if (articles.length > 0) {
+            console.log(`[LiveWire] ${topic}: showing ${articles.length} article(s) from RSS/NewsData ✅`);
+          } else if (fallbacks.length > 0) {
+            console.log(`[LiveWire] ${topic}: showing curated fallback(s) ✅`);
+          } else {
+            console.log(`[LiveWire] ${topic}: no headlines ❌`);
+          }
+
+          return (
+            <div key={topic} className="mb-6">
+              <h4 className="text-lg font-semibold mb-2">
+                {topicEmojiMap[topic]} {cleanTopic}
+              </h4>
+
+              {articles.length > 0 ? (
+                articles.map((article, i) => (
+                  <div
+                    key={i}
+                    className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm"
+                  >
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold underline"
+                    >
+                      {article.title}
+                    </a>
+                    <p className="text-gray-300">{article.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {article.publishedAt} · {article.source}
+                    </p>
+                  </div>
+                ))
+              ) : fallbacks.length > 0 ? (
+                fallbacks.map((story, i) => (
+                  <div
+                    key={i}
+                    className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm"
+                  >
+                    <span className="block font-bold">{story.title}</span>
+                    <p className="text-gray-300">{story.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {story.publishedAt} · {story.source}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="italic text-gray-400">
+                  No headlines available right now.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-10 text-center text-white">
+        <p className="italic mb-2">
+          We truly hope you and {dateName || "your date"} Talk More Tonight.
+        </p>
+        <p className="text-sm text-gray-400 mb-4">
+          © 2025 Talk More Tonight™. All rights reserved.
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-6 rounded-full shadow hover:scale-105 transition"
+        >
+          🌟 Back to Home
+        </button>
+      </footer>
+    </div>
+  );
+};
+
+export default News;

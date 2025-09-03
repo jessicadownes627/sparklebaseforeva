@@ -1,66 +1,67 @@
-// outfitSuggestions.js — Summer Edition ☀️🌈
+// outfitSuggestions.js — Late Summer ➝ Early Fall Edition 🍂☀️
 
 const outfitSuggestions = {
   feminine: {
     "Laid-back & Easy": [
-      "Light tee or breezy tank with soft shorts or a casual skirt",
-      "Comfy sandals or your favorite white sneakers",
-      "Outfit should feel like a sunny hug — effortless and sweet",
-      "That dress you almost wore last weekend? Wear it tonight."
+      "Light tee or tank layered with a cozy cardigan",
+      "Denim skirt or jeans with sneakers or ankle boots",
+      "Add a scarf if it’s chilly at night",
+      "That dress you loved all summer? Pair it with boots."
     ],
     "Confident & Sharp": [
-      "Fitted tank or crop with high-waisted shorts or a sleek mini",
-      "Polished sunglasses, layered necklaces, and pulled-together hair",
-      "Look that says, ‘I knew this would turn heads’",
-      "It's your main character moment. Dress like it."
+      "Flowy blouse tucked into high-waisted jeans",
+      "Layer with a lightweight blazer or leather jacket",
+      "Boots or clean white sneakers for a polished vibe",
+      "Says, ‘I’m ready for rooftop cocktails or a fall stroll.’"
     ],
     "Statement Look": [
-      "Bold color or a flirty cut — rompers, halters, or flowy jumpsuits",
-      "Earrings that sparkle and shoes that snap",
-      "That outfit that makes you twirl in the mirror? Yep.",
-      "Drama. In a good way. You’re the vibe."
+      "Bold jumpsuit or midi dress with a jean jacket",
+      "Booties or standout heels",
+      "Add sparkle with earrings or layered necklaces",
+      "It’s still warm enough to play, cool enough to layer."
     ]
   },
   masculine: {
     "Laid-back & Easy": [
-      "Breathable tee or tank with drawstring shorts or joggers",
-      "Cool sneakers or slide sandals that can go anywhere",
-      "Feels chill, but still pulled together",
-      "That shirt you always get compliments on? Yeah, put that on."
+      "Short-sleeve henley or tee with lightweight flannel to layer",
+      "Jeans or chinos with sneakers or casual boots",
+      "Chill enough for warm days, layered enough for nights",
+      "That flannel you toss on after sundown? Wear it now."
     ],
     "Confident & Sharp": [
-      "Short-sleeve button-up or fitted polo with clean shorts",
-      "Minimal watch, clean shoes, fresh hair = done",
-      "Outfit that says ‘I’m showing up with purpose’",
-      "You could run into your ex tonight and feel amazing."
+      "Crisp polo or button-up with dark jeans",
+      "Light bomber jacket or denim jacket on standby",
+      "Clean sneakers or Chelsea boots",
+      "Effortless, but ready if the weather flips."
     ],
     "Statement Look": [
-      "Prints, textures, or that bold shirt you keep meaning to wear",
-      "Sunglasses, crisp shoes, and an attitude",
-      "That unexpected combo that weirdly *works*? Do it.",
-      "Dare a little. Be a little extra. It’s date night."
+      "Textured shirt or patterned button-up",
+      "Layer with leather or utility jacket",
+      "Boots that pop, or bold sneakers",
+      "The combo that feels unforgettable."
     ]
   },
   neutral: {
     "Laid-back & Easy": [
-      "Soft tee or tank with cargo shorts, flowy pants, or jeans",
-      "Casual sneakers, sandals, or slip-ons — comfort is key",
-      "Easy to move in, easy to feel like yourself in",
-      "Favorite piece that feels *right*, no matter the day."
+      "Soft tee or tank with jeans or flowy pants",
+      "Layer with an oversized cardigan or hoodie",
+      "Sneakers or ankle boots keep it season-flexible",
+      "Feels like late summer sunsets with a fall breeze."
     ],
     "Confident & Sharp": [
-      "Tailored fit without overthinking — sleek top, tapered pants or shorts",
-      "A pop of detail — rolled sleeves, chain, bold shoe, or bag",
-      "Clean lines, clear vibe",
-      "Power doesn’t shout. It radiates. So do you."
+      "Tailored shirt or sleek knit with tapered pants",
+      "Light trench or bomber jacket for layering",
+      "Polished sneakers, boots, or loafers",
+      "Sharp, but still breathable."
     ],
     "Statement Look": [
-      "Color, silhouette, or texture that feels electric",
-      "Something that *you* love, even if it breaks “rules”",
-      "A showstopper piece layered over comfort",
-      "You’re not dressing for them. You’re dressing for the story."
+      "Play with layers — bold sweater vest, jacket, or scarf",
+      "Boots or sneakers that stand out",
+      "Mix textures (cotton + leather, denim + knit)",
+      "Perfect balance: end-of-summer bold, start-of-fall edge."
     ]
   }
 };
 
 export default outfitSuggestions;
+

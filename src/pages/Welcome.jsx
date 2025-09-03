@@ -52,6 +52,11 @@ const Welcome = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
+        {/* Adventure tagline inside the card */}
+        <p className="text-center text-sm italic text-gray-700 mb-2">
+          Welcome to Talk More Tonight ⭐️ Every choice you make shapes tonight’s adventure — never the same twice.
+        </p>
+
         <input
           type="text"
           placeholder="Your name (e.g. Lorraine)"

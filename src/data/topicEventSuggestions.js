@@ -30,9 +30,8 @@ const topicEventSuggestions = {
     ],
     "Legal Drama ⚖️": [
       "Watch a courtroom drama and discuss the verdicts","Tour a courthouse or justice museum if your city has one.",
-    "Play a mock trial game at home or debate something silly but fun.",
-      "Stage a fake trial over something ridiculous (like who gets dessert)",
-      "Visit a local courthouse or legal landmark"
+    "Play a mock trial game at home or debate something silly, but fun.",
+      "Make a case for the best dessert ever created - and share it", "Visit a local courthouse or legal landmark"
     ],
 
     "Podcasts 🎧": [

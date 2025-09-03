@@ -1,18 +1,40 @@
-// src/context/UserContext.jsx
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [userData, setUserData] = useState({
-    userName: "",
-    dateName: "",
-    energy: "Dreamy ✨",  // Default energy
-    when: "",  // Default when
-  });
+  const [userData, setUserData] = useState({});
+  const [includeDateTeams, setIncludeDateTeams] = useState(false);
+  const [dateTeams, setDateTeams] = useState([]);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const storedInclude = JSON.parse(localStorage.getItem("includeDateTeams") || "false");
+    const storedTeams = JSON.parse(localStorage.getItem("dateTeams") || "[]");
+    setIncludeDateTeams(storedInclude);
+    setDateTeams(storedTeams);
+  }, []);
+
+  // Persist changes
+  useEffect(() => {
+    localStorage.setItem("includeDateTeams", JSON.stringify(includeDateTeams));
+  }, [includeDateTeams]);
+
+  useEffect(() => {
+    localStorage.setItem("dateTeams", JSON.stringify(dateTeams));
+  }, [dateTeams]);
 
   return (
-    <UserContext.Provider value={{ userData, setUserData }}>
+    <UserContext.Provider
+      value={{
+        userData,
+        setUserData,
+        includeDateTeams,
+        setIncludeDateTeams,
+        dateTeams,
+        setDateTeams,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

@@ -1,0 +1,2026 @@
+// src/pages/News.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import TapIntoCard from "../components/TapIntoCard";
+
+// Sheets + utils
+import { fetchHotSheetFromSheet } from "../utils/fetchHotSheetFromSheet";
+import { fetchThingsWeLoveFromSheet } from "../utils/fetchThingsWeLoveFromSheet";
+import { fetchBigGamesFromSheet } from "../utils/fetchBigGamesFromSheet";
+import { getTAPintoHeadlinesForCity } from "../utils/rssFeeds";
+import { rerankWithLocation } from "../utils/localBoost";
+import rssTopicFeeds from "../data/rssTopicFeeds";
+import { getLiveWireHeadlinesFromNewsData } from "../utils/getLiveWireHeadlinesFromNewsData";
+
+import {
+  newsKeywordMap as localKeywordMap,
+  badWordsByTopic as localBadWords,
+} from "../data/newsKeywordMap";
+
+import conversationDeck from "../data/conversationDeck";
+import topicEmojiMap from "../data/topicEmojiMap";
+import pocketCompanionDeck from "../data/pocketCompanionDeck";
+import cityTeamMap from "../data/cityTeamMap";
+import thingsWeLoveFallback from "../data/thingsWeLoveFallback";
+import bigGamesFallback from "../data/bigGamesFallback";
+import DateNightFunSection from "../components/DateNightFunSection";
+import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFromSheet";
+import curatedFallbacksLocal from "../data/curatedFallbacks";
+
+// ✅ Sports helpers (local teams by state)
+import { getTeamsForStateAndSport } from "../utils/sportsHelpers";
+
+// BEGIN CONFETTI (web-only; safe for React Native/iOS builds)
+const IS_NATIVE =
+  typeof navigator !== "undefined" && navigator.product === "ReactNative";
+
+let webConfetti = null;
+
+if (!IS_NATIVE && typeof window !== "undefined") {
+  try {
+    const dynImport = new Function("m", "return import(m)");
+    dynImport("canvas-confetti")
+      .then(mod => { webConfetti = mod.default || mod; })
+      .catch(() => {});
+  } catch {}
+}
+
+// =========================================
+// CONFIG
+// =========================================
+const TOPIC_MAX = 4;
+const CURATED_RESERVE = 1;
+const CACHE_VERSION = "v7-fix";
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+// =========================================
+// HELPERS
+// =========================================
+async function getNewsApiKey() {
+  const isNative =
+    typeof navigator !== "undefined" && navigator.product === "ReactNative";
+  if (isNative) {
+    try {
+      const { default: Constants } = await new Function("m", "return import(m)")(
+        "expo-constants"
+      );
+      return (
+        Constants?.expoConfig?.extra?.newsdataKey ||
+        Constants?.manifest?.extra?.newsdataKey ||
+        ""
+      );
+    } catch {}
+  }
+  return (
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_NEWSDATA_API_KEY) ||
+    (typeof process !== "undefined" && process?.env?.VITE_NEWSDATA_API_KEY) ||
+    ""
+  );
+}
+
+const getRandom = (arr = [], fallback = "") =>
+  Array.isArray(arr) && arr.length
+    ? arr[Math.floor(Math.random() * arr.length)]
+    : fallback;
+
+const stripEmoji = (s = "") =>
+  s
+    .replace(
+      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDEFF])/g,
+      ""
+    )
+    .trim();
+
+const stripHtml = (s = "") =>
+  String(s).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+
+const snippet = (s = "", max = 110) => {
+  const clean = stripHtml(s);
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+};
+
+const displayTopicLabel = (key, selectedTopics = []) =>
+  selectedTopics.find((t) => stripEmoji(t) === key) || key;
+
+// versioned localStorage cache
+const getCache = (k, fallback) => {
+  try {
+    const raw = localStorage.getItem(k);
+    if (!raw) return fallback;
+    const { v, ts, data } = JSON.parse(raw);
+    if (v !== CACHE_VERSION) return fallback;
+    if (!ts || Date.now() - ts > CACHE_TTL_MS) return fallback;
+    return data;
+  } catch {
+    return fallback;
+  }
+};
+const setCache = (k, data) => {
+  try {
+    localStorage.setItem(k, JSON.stringify({ v: CACHE_VERSION, ts: Date.now(), data }));
+  } catch {}
+};
+
+const safeSplit = (val) =>
+  Array.isArray(val) ? val : val?.split ? val.split(/[,•\n]/) : [];
+
+function normalizeCityString(input) {
+  const s = String(input || "").trim();
+  if (!s) return { cityName: "", state: "", label: "" };
+  const parts = s.split(",").map((p) => p.trim());
+  let cityName = "";
+  let state = "";
+  if (parts.length === 2) {
+    const [a, b] = parts;
+    if (a.length <= 3 && /^[a-z]{2}$/i.test(a)) {
+      state = a.toUpperCase();
+      cityName = b;
+    } else if (b.length <= 3 && /^[a-z]{2}$/i.test(b)) {
+      cityName = a;
+      state = b.toUpperCase();
+    } else {
+      cityName = a;
+      state = b.toUpperCase();
+    }
+  } else {
+    cityName = s;
+  }
+  const label = state ? `${cityName}, ${state}` : cityName;
+  return { cityName, state, label };
+}
+
+const isDev =
+  (typeof __DEV__ !== "undefined" && __DEV__) ||
+  (typeof import.meta !== "undefined"
+    ? import.meta.env?.MODE !== "production"
+    : typeof process !== "undefined"
+    ? process.env?.NODE_ENV !== "production"
+    : false);
+
+function canonicalUrl(u = "") {
+  try {
+    const url = new URL(u);
+    return url.origin + url.pathname;
+  } catch {
+    return String(u || "").split("?")[0];
+  }
+}
+function titleSig(t = "") {
+  return String(t)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\b(a|an|the|and|or|to|of|in|on|for|with|by|from|at|is|are|be|was|were|as|it|this|that)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 12)
+    .join(" ");
+}
+function dedupePushFactory() {
+  const seenUrls = new Set();
+  const seenTitles = new Set();
+  return (arr, item) => {
+    const cu = canonicalUrl(item?.url || item?.link || "");
+    const ts = titleSig(item?.title || "");
+    if (cu && seenUrls.has(cu)) return false;
+    if (ts && seenTitles.has(ts)) return false;
+    if (cu) seenUrls.add(cu);
+    if (ts) seenTitles.add(ts);
+    arr.push(item);
+    return true;
+  };
+}
+
+function getSportEmoji(sport) {
+  if (!sport) return "🏅";
+  const foundKey = Object.keys(topicEmojiMap).find((key) =>
+    key.toLowerCase().startsWith(String(sport).toLowerCase())
+  );
+  return foundKey ? topicEmojiMap[foundKey] : "🏅";
+}
+
+const sportsSchedules = [
+  { league: "Baseball", link: "https://www.espn.com/mlb/schedule" },
+  { league: "Football", link: "https://www.espn.com/nfl/schedule" },
+  { league: "Basketball", link: "https://www.espn.com/nba/schedule" },
+  { league: "Hockey", link: "https://www.espn.com/nhl/schedule" },
+];
+
+const TAPINTO_CITY_ALIASES = {
+  "coconut creek": ["coral springs", "parkland", "margate", "pompano beach", "deerfield beach", "broward county"],
+  "coral springs": ["parkland", "coconut creek"],
+};
+const withState = (names = [], state = "") =>
+  state ? names.map((n) => `${n}, ${state}`) : names;
+
+const lc = (s = "") => String(s).toLowerCase();
+const includesAny = (txt = "", terms = []) => terms.some((t) => txt.includes(lc(t)));
+
+// =========================================
+// GLOBAL NSFW FILTER (Apple-safe)
+// =========================================
+const NSFW_TERMS = [
+  "nsfw","onlyfans","porn","pornography","xxx","sex tape","sex-tape","sex video",
+  "adult film","adult video","camgirl","cam site","camsite","escort","escorting",
+  "prostitute","prostitution","brothel","strip club","stripclub","stripper",
+  "lap dance","boudoir","nude","naked","nudity","explicit","erotic","fetish",
+  "kink","bdsm","leaked photos","leaked video","sex work","sexwork","sexualized",
+  "graphic sexual",
+  "sexual assault","rape","molestation","child abuse","pedophile","incest","grooming"
+];
+
+const NSFW_DOMAIN_DENY = [
+  "pornhub.com","xvideos.com","xnxx.com","onlyfans.com","chaturbate.com","stripchat.com",
+  "cam4.com","camsoda.com","youporn.com","redtube.com","spankbang.com"
+];
+
+const NSFW_EXCEPTIONS = ["middlesex","essex","sussex"];
+
+const escapeRegex = (s = "") => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const hasWord = (txt = "", term = "") =>
+  new RegExp(`\\b${escapeRegex(term)}\\b`, "i").test(txt);
+
+function hostFromUrl(u = "") {
+  try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; }
+}
+
+function isStoryNSFW(story = {}) {
+  const host = hostFromUrl(story.url || story.link || "");
+  if (host && NSFW_DOMAIN_DENY.some(d => host.endsWith(d))) return true;
+
+  const raw = `${story.title || ""} ${story.description || ""} ${story.source || ""}`.toLowerCase();
+
+  if (NSFW_EXCEPTIONS.some(ex => raw.includes(ex))) {
+    // still check other terms
+  }
+
+  const alwaysBlock = NSFW_TERMS;
+  for (const term of alwaysBlock) {
+    if (hasWord(raw, term)) return true;
+  }
+  if (/\b(explicit|racy)\s+(images?|photos?|videos?)\b/i.test(raw)) return true;
+  return false;
+}
+
+// Team keyword nudges
+const MLB_TEAM_KEYWORDS = ["MLB","Major League Baseball","Yankees","Dodgers","Mets","Red Sox","Cubs","Giants","Phillies","Braves",
+  "Cardinals","Astros","Rangers","Padres","Blue Jays","Orioles","Mariners","Pirates","Rays","Twins","Brewers",
+  "Guardians","Rockies","Angels","Athletics","Diamondbacks","Nationals","Marlins","Reds","Tigers","Royals","White Sox"];
+const NFL_TEAM_KEYWORDS = ["NFL","National Football League","Cowboys","49ers","Chiefs","Eagles","Giants","Jets","Patriots","Packers","Steelers",
+  "Bills","Rams","Raiders","Seahawks","Dolphins","Vikings","Lions","Bears","Commanders","Ravens","Texans","Jaguars",
+  "Buccaneers","Titans","Saints","Panthers","Colts","Browns","Broncos","Falcons","Cardinals","Chargers","Bengals"];
+const NBA_TEAM_KEYWORDS = ["NBA","National Basketball Association","Lakers","Celtics","Warriors","Knicks","Nets","Bulls","Heat","76ers","Bucks",
+  "Mavericks","Clippers","Suns","Nuggets","Timberwolves","Spurs","Rockets","Pelicans","Hawks","Cavaliers","Pistons",
+  "Pacers","Magic","Wizards","Hornets","Raptors","Grizzlies","Jazz","Thunder","Kings","Trail Blazers"];
+const NHL_TEAM_KEYWORDS = ["NHL","National Hockey League","Rangers","Islanders","Devils","Bruins","Canadiens","Maple Leafs","Red Wings","Blackhawks",
+  "Penguins","Flyers","Lightning","Panthers","Sabres","Senators","Capitals","Hurricanes","Blue Jackets","Predators",
+  "Blues","Stars","Avalanche","Wild","Jets","Coyotes","Golden Knights","Kraken","Oilers","Flames","Canucks","Sharks","Kings","Ducks"];
+
+// Sports nickname normalizer + sport detector
+const TEAM_ALIASES = {
+  "yanks": "new york yankees",
+  "nyy": "new york yankees",
+  "mets": "new york mets",
+  "ny mets": "new york mets",
+  "d-backs": "arizona diamondbacks",
+  "dbacks": "arizona diamondbacks",
+  "cards": "st. louis cardinals",
+  "bosox": "boston red sox",
+  "chisox": "chicago white sox",
+  "nats": "washington nationals",
+  "halos": "los angeles angels",
+  "sf giants": "san francisco giants",
+  "la dodgers": "los angeles dodgers",
+  "a's": "oakland athletics",
+  "as": "oakland athletics",
+  "jays": "toronto blue jays",
+  "brew crew": "milwaukee brewers",
+  "buccos": "pittsburgh pirates",
+  "phils": "philadelphia phillies",
+  "friars": "san diego padres",
+  "rox": "colorado rockies",
+  "cowboys": "dallas cowboys",
+  "pats": "new england patriots",
+  "niners": "san francisco 49ers",
+  "chiefs": "kansas city chiefs",
+};
+function normalizeSportsText(s = "") {
+  let t = String(s).toLowerCase();
+  for (const [alias, full] of Object.entries(TEAM_ALIASES)) {
+    if (!full) continue;
+    t = t.replace(new RegExp(`\\b${alias}\\b`, "g"), full);
+  }
+  // avoid SF/NY ambiguities
+  t = t.replace(/\bgiants\b/g, " new york giants ");
+  t = t.replace(/\brangers\b/g, " new york rangers ");
+  return t;
+}
+const sportTopicToKey = (topic = "") => {
+  const s = stripEmoji(topic).toLowerCase();
+  if (s.includes("baseball")) return "Baseball";
+  if (s.includes("football")) return "Football";
+  if (s.includes("basketball")) return "Basketball";
+  if (s.includes("hockey")) return "Hockey";
+  return "";
+};
+
+// =========================================
+// SCORING
+// =========================================
+function scoreStoryByTopic(story = {}, topic = "", cityLabel = "", cityTeams = null, teamsToWatchLower = []) {
+  if (isStoryNSFW(story)) return -999;
+
+  let s = 0;
+  if (story.sourceType === "newsdata") s += 1;
+  else if (story.sourceType === "rss") s += 0.5;
+  else if (story.isFallback) s += 0.25;
+
+  const txt = normalizeSportsText(
+    `${story.title || ""} ${story.description || ""} ${story.source || ""}`
+  );
+
+  const cfg = localKeywordMap[topic] || {};
+  const bads = localBadWords[topic] || [];
+  if (bads.some(word => txt.includes(word.toLowerCase()))) return -999;
+  if ((cfg.mustIncludeAny || []).length && !includesAny(txt, cfg.mustIncludeAny)) return -999;
+
+  const w = cfg.domainWeights?.[hostFromUrl(story.url || story.link || "")];
+  if (typeof w === "number") s += w;
+
+  const posW = cfg.positiveWeight ?? 1;
+  const negW = cfg.negativeWeight ?? 1.5;
+  (cfg.positive || []).forEach(k => { if (txt.includes(k.toLowerCase())) s += posW; });
+  (cfg.negative || []).forEach(k => { if (txt.includes(k.toLowerCase())) s -= negW; });
+
+  const userState = (cityLabel.split(",")[1] || "").trim().toUpperCase();
+  const cityLower = cityLabel.toLowerCase();
+  if (cityLower && txt.includes(cityLower)) s += 1;
+
+  const REGIONAL_POSITIVE_BY_STATE = { FL: ["Florida","South Florida","Broward","Palm Beach","Miami","Fort Lauderdale","West Palm Beach","Boca Raton"] };
+  const BIG_MARKET_NEGATIVES = ["los angeles","california","new york","nyc","chicago","san francisco",
+    "seattle","boston","philadelphia","houston","dallas","atlanta","phoenix","denver"];
+  const regional = REGIONAL_POSITIVE_BY_STATE[userState] || [];
+  regional.forEach(term => { if (txt.includes(term.toLowerCase())) s += 0.5; });
+  if (!txt.includes(cityLower) && !regional.some(t => txt.includes(t.toLowerCase()))) {
+    BIG_MARKET_NEGATIVES.forEach(term => { if (txt.includes(term)) s -= 0.8; });
+  }
+
+  if (topic === "Baseball" && includesAny(txt, MLB_TEAM_KEYWORDS)) s += 0.75;
+  if (topic === "Football" && includesAny(txt, NFL_TEAM_KEYWORDS)) s += 0.5;
+  if (topic === "Basketball" && includesAny(txt, NBA_TEAM_KEYWORDS)) s += 0.5;
+  if (topic === "Hockey" && includesAny(txt, NHL_TEAM_KEYWORDS)) s += 0.5;
+
+  const localTeams = (cityTeams?.[topic] || []).map(lc);
+  if (localTeams.length && includesAny(txt, localTeams)) s += 1.0;
+
+  if (teamsToWatchLower.length && includesAny(txt, teamsToWatchLower)) s += 1.0;
+
+  const d = new Date(story.publishedAt || story.pubDate || Date.now());
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days > 30) s -= 1;
+  if (days > 90) s -= 2;
+
+  if (topic === "Baseball") s += 0.2;
+
+  return s;
+}
+
+function refineTopic(items = [], topic = "", cityLabel = "", cityTeams = null, max = TOPIC_MAX, teamsToWatchLower = []) {
+  const cfg = localKeywordMap[topic] || {};
+  const minScore = Number.isFinite(cfg.minScore) ? cfg.minScore : -Infinity;
+
+  let filtered = (items || [])
+    .map(st => ({ st, score: scoreStoryByTopic(st, topic, cityLabel, cityTeams, teamsToWatchLower) }))
+    .filter(x => x.score >= minScore)
+    .sort((a,b) => b.score - a.score)
+    .map(x => x.st);
+
+  if (filtered.length < max && !filtered.some(s => s.isFallback) && items.some(s => s.isFallback)) {
+    const topCurated = items.find(s => s.isFallback);
+    if (topCurated) filtered.push(topCurated);
+  }
+
+  return filtered.slice(0, max);
+}
+
+// =========================================
+// UI styles
+// =========================================
+const PILL_BASE    = "text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 border";
+const PILL_CURATED = "bg-teal-500/20 text-teal-200 border-teal-500/40";
+const PILL_LIVE    = "bg-yellow-300/20 text-yellow-100 border-yellow-300/40";
+
+// =========================================
+// Story Card
+// =========================================
+function StoryCard({ story }) {
+  const base =
+    "rounded-md px-3 py-2 border border-white/10 shadow-sm transition bg-[#111827] text-white group";
+  const inner = (
+    <>
+      <div className="flex items-start gap-2">
+        <span className={`${PILL_BASE} ${story?.isFallback ? PILL_CURATED : PILL_LIVE}`}>
+          {story?.isFallback ? "Curated" : "Live"}
+        </span>
+        {story?.isFallback || !story?.url ? (
+          <span className="text-sm font-semibold leading-snug break-words">
+            {story.title}
+          </span>
+        ) : (
+          <span className="text-sm font-semibold leading-snug break-words underline-offset-2 group-hover:underline">
+            {story.title} <span aria-hidden>↗</span>
+          </span>
+        )}
+      </div>
+      {story?.description ? (
+        <p className="text-[12px] text-white/70 mt-1 leading-snug break-words">
+          {snippet(story.description, 110)}
+        </p>
+      ) : null}
+      <div className="mt-1 text-[10px] text-white/50 tracking-wide">
+        {(story?.publishedAt || story?.pubDate || "").slice(0, 10)} • {story?.source}
+      </div>
+    </>
+  );
+
+  if (story?.url && !story?.isFallback) {
+    return (
+      <a
+        href={story.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${base} block hover:bg-[#0f172a] hover:-translate-y-[1px]`}
+      >
+        {inner}
+      </a>
+    );
+  }
+  return <div className={base}>{inner}</div>;
+}
+
+// =========================================
+/** Component */
+// =========================================
+const News = () => {
+  const navigate = useNavigate();
+  const { userData, includeDateTeams, dateTeams } = useUser();
+
+  const [tapintoHeadlines, setTapintoHeadlines] = useState([]);
+  const [tapintoResolvedCity, setTapintoResolvedCity] = useState("");
+
+  const [liveWireHeadlines, setLiveWireHeadlines] = useState({});
+  const [liveCounts, setLiveCounts] = useState({
+    apiKey: false,
+    newsdata: 0,
+    rss: 0,
+    curated: 0,
+  });
+
+  const [expandedTopics, setExpandedTopics] = useState([]);
+  const [hotSheet, setHotSheet] = useState(() => getCache("hotSheet", []));
+  const [filteredHotSheet, setFilteredHotSheet] = useState({});
+  const [thingsWeLove, setThingsWeLove] = useState(() => getCache("thingsWeLove", []));
+  const [bigGames, setBigGames] = useState(() => getCache("bigGames", []));
+  const [shuffledConvoCards, setShuffledConvoCards] = useState(() =>
+    [...conversationDeck].sort(() => 0.5 - Math.random()).slice(0, 3)
+  );
+  const [isFading, setIsFading] = useState(false);
+
+  const liveLockRef = React.useRef(false);
+  const lastLiveRunAtRef = React.useRef(0);
+  const LIVE_COOLDOWN_MS = 12000;
+
+  const {
+    userName = "You",
+    dateName = "your date",
+    city: cityRaw = "",
+    selectedTopics = [],
+    subtopicAnswers = {},
+  } = userData || {};
+
+  const { cityName, state, label: cityLabel } = useMemo(
+    () => normalizeCityString(cityRaw),
+    [cityRaw]
+  );
+
+  function normalizePlace(s = "") {
+    return String(s)
+      .toLowerCase()
+      .replace(/\b(city|township|town|village|boro|borough|city of)\b/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/,\s*/g, ", ")
+      .trim();
+  }
+
+  const CITY_SYNONYM_KEYS = {
+    "ny": "new york, ny",
+    "nyc": "new york, ny",
+    "new york": "new york, ny",
+    "new york city": "new york, ny",
+    "la": "los angeles, ca",
+    "l.a.": "los angeles, ca",
+    "los angeles": "los angeles, ca",
+    "sf": "san francisco, ca",
+    "san francisco": "san francisco, ca",
+    "dc": "washington, dc",
+    "d.c.": "washington, dc",
+    "washington dc": "washington, dc",
+  };
+
+  const DEFAULT_CITY_TEAMS = {
+    "new york, ny": {
+      Baseball:   ["Yankees", "Mets"],
+      Football:   ["Giants", "Jets"],
+      Basketball: ["Knicks", "Nets"],
+      Hockey:     ["Rangers", "Islanders", "Devils"],
+    },
+  };
+
+  const lowerCityTeamIndex = useMemo(() => {
+    const out = {};
+    const put = (k, v) => { const key = normalizePlace(k); if (key && !out[key]) out[key] = v; };
+
+    Object.keys(cityTeamMap || {}).forEach((k) => {
+      const v = cityTeamMap[k];
+      const raw = k.toLowerCase();
+      const norm = normalizePlace(raw);
+      put(raw, v);
+      put(norm, v);
+      const [cityPart] = raw.split(",").map(s => s.trim());
+      if (cityPart) {
+        put(cityPart, v);
+        const synCanon = CITY_SYNONYM_KEYS[normalizePlace(cityPart)];
+        if (synCanon) put(synCanon, v);
+      }
+    });
+
+    if (!out["new york, ny"] && DEFAULT_CITY_TEAMS["new york, ny"]) {
+      out["new york, ny"] = DEFAULT_CITY_TEAMS["new york, ny"];
+      out["nyc"] = DEFAULT_CITY_TEAMS["new york, ny"];
+      out["ny"]  = DEFAULT_CITY_TEAMS["new york, ny"];
+      out["new york"] = DEFAULT_CITY_TEAMS["new york, ny"];
+    }
+
+    return out;
+  }, []);
+
+  const stateLower = (state || "").toLowerCase();
+  const rawCity = (userData?.city || "").trim();
+  const [userCityDisplay, userStateDisplay] = rawCity.split(",").map(s => s.trim());
+
+  const cityTeams = useMemo(() => {
+    const normRaw = normalizePlace(rawCity);
+    const normLabel = normalizePlace(cityLabel);
+    const cityOnly = normalizePlace(cityName);
+
+    const cands = [
+      CITY_SYNONYM_KEYS[normRaw] || normRaw,
+      CITY_SYNONYM_KEYS[cityOnly] || cityOnly,
+      normLabel,
+      stateLower ? `${cityOnly}, ${stateLower}` : "",
+    ].filter(Boolean);
+
+    for (const c of cands) {
+      if (lowerCityTeamIndex[c]) return lowerCityTeamIndex[c];
+    }
+    for (const [k, v] of Object.entries(lowerCityTeamIndex)) {
+      if (k.startsWith(cityOnly)) return v;
+    }
+    return null;
+  }, [rawCity, cityLabel, cityName, stateLower, lowerCityTeamIndex]);
+
+  const normalizedSubtopicAnswers = useMemo(() => {
+    const out = {};
+    Object.entries(subtopicAnswers || {}).forEach(([topicWithEmoji, arr]) => {
+      out[stripEmoji(topicWithEmoji)] = (arr || []).map((s) => stripEmoji(s));
+    });
+    return out;
+  }, [subtopicAnswers]);
+
+  // ---- Big Games helpers (teams + date) ----
+  const teamsToWatchLower = useMemo(() => {
+    const partner = includeDateTeams ? (dateTeams || []).map(d => d?.team) : [];
+    const favs    = Array.isArray(userData?.favoriteTeams) ? userData.favoriteTeams : [];
+    const locals  = Object.values(cityTeams || {}).flat();
+
+    return Array.from(new Set([...partner, ...favs, ...locals]))
+      .filter(Boolean)
+      .map(s => String(s).toLowerCase());
+  }, [includeDateTeams, dateTeams, userData?.favoriteTeams, cityTeams]);
+
+  const parseFirstDate = (val = "") => {
+    const first = String(val).split(/[-–to]+/i)[0].trim();
+    const d = new Date(first);
+    return isNaN(d) ? null : d;
+  };
+
+  // TAPinto resolver
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setTapintoHeadlines([]);
+      setTapintoResolvedCity("");
+
+      const base = Array.from(
+        new Set(
+          [cityLabel, rawCity, state ? `${state}, ${cityName}` : "", state ? `${cityName}, ${state}` : "", cityName]
+            .map((s) => String(s || "").trim())
+            .filter(Boolean)
+        )
+      );
+
+      const aliases = TAPINTO_CITY_ALIASES[cityName.toLowerCase()] || [];
+      const candidates = Array.from(new Set([...base, ...aliases, ...withState(aliases, state)]));
+
+      for (const cand of candidates) {
+        try {
+          const data = await getTAPintoHeadlinesForCity(cand);
+          if (!cancelled && Array.isArray(data) && data.length > 0) {
+            setTapintoHeadlines(data);
+            setTapintoResolvedCity(cand);
+            return;
+          }
+        } catch {}
+      }
+
+      if (!cancelled) {
+        setTapintoHeadlines([]);
+        setTapintoResolvedCity("");
+      }
+    };
+
+    if (cityLabel || rawCity) run();
+    else {
+      setTapintoHeadlines([]);
+      setTapintoResolvedCity("");
+    }
+
+    return () => { cancelled = true; };
+  }, [cityLabel, rawCity, cityName, state]);
+
+  const companion = useMemo(
+    () => ({
+      confidence: getRandom(pocketCompanionDeck.confidence),
+      sayThis: getRandom(pocketCompanionDeck.sayThis),
+      finalThought: getRandom(pocketCompanionDeck.finalThought),
+    }),
+    []
+  );
+
+  const toggleTopic = (topic) => {
+    setExpandedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
+  const reshuffleCards = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setShuffledConvoCards(
+        [...conversationDeck].sort(() => 0.5 - Math.random()).slice(0, 3)
+      );
+      setIsFading(false);
+    }, 300);
+  };
+
+  // =========================
+  // Personalization signals for News
+  // =========================
+  const selectedSports = useMemo(
+    () => (selectedTopics || []).map(sportTopicToKey).filter(Boolean),
+    [selectedTopics]
+  );
+
+  const stateCodeForLocal = useMemo(() => {
+    const parts = (userData?.city || "").split(",").map(s => s.trim());
+    const st = parts.length === 2 && /^[A-Za-z]{2}$/.test(parts[1]) ? parts[1].toUpperCase() : "";
+    return st;
+  }, [userData?.city]);
+
+  const localTeamsByState = useMemo(() => {
+    if (!selectedSports.length || !stateCodeForLocal) return [];
+    return selectedSports.flatMap(s => getTeamsForStateAndSport(stateCodeForLocal, s));
+  }, [stateCodeForLocal, selectedSports]);
+
+  const cityTeamsFlat = useMemo(() => {
+    return Object.values(cityTeams || {}).flat();
+  }, [cityTeams]);
+
+  const favoriteTeamsList = useMemo(() => {
+    const arr = Array.isArray(dateTeams) ? dateTeams : [];
+    return arr.map(x => x?.team).filter(Boolean);
+  }, [dateTeams]);
+
+  const teamsToWatch = useMemo(
+    () => Array.from(new Set([...favoriteTeamsList, ...localTeamsByState, ...cityTeamsFlat])),
+    [favoriteTeamsList, localTeamsByState, cityTeamsFlat]
+  );
+  const teamsToWatchLowerForRender = useMemo(
+    () => teamsToWatch.map(t => String(t).toLowerCase()),
+    [teamsToWatch]
+  );
+
+  // Live headlines (with burst guard + topic cap)
+  const fetchLive = async () => {
+    if (liveLockRef.current) return;
+    const now = Date.now();
+    if (now - lastLiveRunAtRef.current < LIVE_COOLDOWN_MS) return;
+    liveLockRef.current = true;
+
+    try {
+      const apiKey = await getNewsApiKey();
+      const baseTopics = (selectedTopics || []).map((t) => stripEmoji(t));
+
+      // Only fetch a couple at a time to be gentle on the API while you iterate
+      const MAX_TOPICS_PER_RUN = 2;
+      const topicsForFetch = baseTopics.slice(0, MAX_TOPICS_PER_RUN);
+
+      console.log("[News] live fetch → topics:", topicsForFetch);
+      const liveByTopic = await getLiveWireHeadlinesFromNewsData({
+        topics: topicsForFetch,
+        perTopic: TOPIC_MAX,
+      });
+
+      const usedCounts = { newsdata: 0, rss: 0, curated: 0 };
+
+      // curated fallbacks from sheet
+      const curatedArr =
+        (await fetchCuratedFallbacksFromSheet(FALLBACK_SHEET, {
+          topicsFilter: baseTopics,
+          limitPerTopic: TOPIC_MAX,
+        }).catch(() => curatedFallbacksLocal)) || [];
+
+      const groupedCurated = curatedArr.reduce((acc, a) => {
+        const key = stripEmoji(a.topic);
+        (acc[key] ||= []).push({
+          ...a,
+          isFallback: true,
+          sourceType: "curated",
+        });
+        return acc;
+      }, {});
+
+      const merged = {};
+      const allTopics = new Set([...baseTopics, ...Object.keys(liveByTopic), ...Object.keys(groupedCurated)]);
+
+      for (const t of allTopics) {
+        const live = (liveByTopic[t] || [])
+          .map(x => {
+            let st = (x.sourceType || "").toLowerCase();
+            if (!st) {
+              if ("source_id" in x || "language" in x || "creator" in x) st = "newsdata";
+              else if ("rss" in x || "feed" in x) st = "rss";
+              else st = "rss";
+            }
+            return {
+              ...x,
+              sourceType: st,
+              url: x.link || x.url,
+              publishedAt: x.pubDate || x.publishedAt || x.published_at,
+              isFallback: false,
+            };
+          })
+          .filter(s => !isStoryNSFW(s));
+
+        // API first
+        live.sort((a, b) => {
+          const aAPI = (a.sourceType || "") === "newsdata";
+          const bAPI = (b.sourceType || "") === "newsdata";
+          return (aAPI === bAPI) ? 0 : (aAPI ? -1 : 1);
+        });
+
+        live.forEach(item => {
+          if ((item.sourceType || "") === "newsdata") usedCounts.newsdata++;
+          else if ((item.sourceType || "") === "rss") usedCounts.rss++;
+        });
+
+        const curated = (groupedCurated[t] || []).filter(s => !isStoryNSFW(s));
+
+        const push = dedupePushFactory();
+        const out = [];
+
+        const capacityBeforeReserve = Math.max(0, TOPIC_MAX - CURATED_RESERVE);
+
+        for (const item of live) {
+          if (out.length >= capacityBeforeReserve) break;
+          push(out, item);
+        }
+
+        let addedCurated = 0;
+        for (const item of curated) {
+          if (addedCurated >= CURATED_RESERVE) break;
+          if (push(out, item)) {
+            usedCounts.curated++;
+            addedCurated++;
+          }
+        }
+
+        // fill to cap
+        const fillOrder = [live, curated];
+        for (const bucket of fillOrder) {
+          for (const item of bucket) {
+            if (out.length >= TOPIC_MAX) break;
+            push(out, item);
+          }
+          if (out.length >= TOPIC_MAX) break;
+        }
+
+        const locSorted = cityLabel ? rerankWithLocation(out, cityLabel) : out;
+        const safeForRefine = locSorted.length ? locSorted : live.slice(0, TOPIC_MAX);
+
+        merged[t] = refineTopic(safeForRefine, t, cityLabel, cityTeams, TOPIC_MAX, teamsToWatchLower);
+      }
+
+      setLiveWireHeadlines(merged);
+      setLiveCounts({
+        apiKey: !!apiKey,
+        newsdata: usedCounts.newsdata,
+        rss: usedCounts.rss,
+        curated: usedCounts.curated,
+      });
+    } catch (e) {
+      console.warn("[News] live fetch failed, using curated only:", e?.message || e);
+      const fbArr =
+        (await fetchCuratedFallbacksFromSheet(FALLBACK_SHEET, {
+          topicsFilter: selectedTopics,
+          limitPerTopic: TOPIC_MAX,
+        }).catch(() => curatedFallbacksLocal)) || [];
+      const groupedFb = fbArr.reduce((acc, a) => {
+        (acc[stripEmoji(a.topic)] ||= []).push({
+          ...a,
+          isFallback: true,
+          sourceType: "curated",
+        });
+        return acc;
+      }, {});
+
+      if (cityLabel) {
+        Object.keys(groupedFb).forEach((t) => {
+          groupedFb[t] = rerankWithLocation(groupedFb[t] || [], cityLabel);
+        });
+      }
+
+      setLiveWireHeadlines(groupedFb);
+      setLiveCounts((prev) => ({ ...prev, curated: fbArr.length }));
+    } finally {
+      lastLiveRunAtRef.current = Date.now();
+      liveLockRef.current = false;
+    }
+  };
+
+  // Load sheets + live
+  useEffect(() => {
+    const HOT_SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFcfO2X43yTcfzsAS5WY80lwEXfC5zNQDiPAS1We9jNSPXgiqFMs7CfoQOTv1C0RFn-dxU5NrkpuyY/pub?output=csv";
+
+    const fetchAll = async () => {
+      try {
+        const partnerTeams = (includeDateTeams ? (dateTeams || []).map(d => d.team).filter(Boolean) : []);
+        const localTeams   = Object.values(cityTeams || {}).flat().filter(Boolean);
+        const favTeams     = Array.isArray(userData?.favoriteTeams) ? userData.favoriteTeams : [];
+        const teamsToWatch = Array.from(new Set([...partnerTeams, ...favTeams, ...localTeams]));
+
+        const [hot, love, games] = await Promise.all([
+          fetchHotSheetFromSheet(`${HOT_SHEET_URL}&cb=${Math.floor(Date.now()/60000)}`),
+          fetchThingsWeLoveFromSheet().catch(() => thingsWeLoveFallback),
+          fetchBigGamesFromSheet().catch(() => bigGamesFallback),
+        ]);
+
+        const hotArr = Array.isArray(hot) ? hot : [];
+        const loveArr = Array.isArray(love) ? love : [];
+        const gamesArr = Array.isArray(games) ? games : [];
+
+        setHotSheet(hotArr);
+        setCache("hotSheet", hotArr);
+        setThingsWeLove(loveArr);
+        setCache("thingsWeLove", loveArr);
+        setBigGames(gamesArr);
+        setCache("bigGames", gamesArr);
+
+        const matched = hotArr.filter((item) => {
+          const topicKey = stripEmoji(item.topic);
+          const subs = normalizedSubtopicAnswers[topicKey] || [];
+          return (
+            (selectedTopics || []).some((t) => stripEmoji(t) === topicKey) &&
+            (subs.length === 0 || subs.includes(stripEmoji(item.subtopic)))
+          );
+        });
+
+        const grouped = {};
+        matched.forEach((entry) => {
+          const k = stripEmoji(entry.topic);
+          (grouped[k] ||= []).push(entry);
+        });
+        setFilteredHotSheet(grouped);
+      } catch (err) {
+        console.error("🔥 Error loading sheets:", err);
+      }
+    };
+
+    fetchAll();
+    if ((selectedTopics || []).length > 0) {
+      fetchLive();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTopics, subtopicAnswers, cityLabel, includeDateTeams, dateTeams]);
+
+  const handleCelebrateAndReturn = async () => {
+    const IS_NATIVE =
+      typeof navigator !== "undefined" && navigator.product === "ReactNative";
+
+    try {
+      if (!IS_NATIVE && typeof window !== "undefined") {
+        const mod = await new Function("m", "return import(m)")("canvas-confetti");
+        const confetti = mod.default || mod;
+
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      }
+    } catch {}
+
+    setTimeout(() => navigate("/"), 1200);
+  };
+
+  const validBigGames = (bigGames || []).filter(
+    (game) =>
+      game && game.Event?.trim() && game.Sport?.trim() && game["Date(s)"]?.trim()
+  );
+
+  // Prefer local/favorite teams if present
+  const featuredBigGames = useMemo(() => {
+    if (!teamsToWatchLower.length) return [];
+    return validBigGames.filter(g => {
+      const blob = `${g.Event||""} ${g.Location||""} ${g.Sport||""}`.toLowerCase();
+      return teamsToWatchLower.some(t => blob.includes(t));
+    });
+  }, [validBigGames, teamsToWatchLower]);
+
+  const gamesToShow = featuredBigGames.length
+    ? featuredBigGames.slice(0, 4)
+    : validBigGames.slice(0, 4);
+
+  const StatusPill = ({ label, value, ok = true }) => (
+    <span
+      className={`text-[11px] px-2 py-1 rounded-full border mr-2 mb-2 inline-block ${
+        ok
+          ? "bg-emerald-600/20 text-emerald-200 border-emerald-400/30"
+          : "bg-rose-600/20 text-rose-200 border-rose-400/30"
+      }`}
+    >
+      <strong>{label}:</strong> {value}
+    </span>
+  );
+
+  const cityDisplay = (userData?.city || "").trim();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#a78bfa] text-white px-4 py-10 relative">
+      <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-40 pointer-events-none z-0" />
+      <div className="relative z-10 max-w-5xl mx-auto space-y-10">
+        {/* DEV STATUS */}
+        {isDev && (
+          <div className="rounded-xl border border-white/20 bg-black/40 p-3 mt-2">
+            <div className="text-xs text-white/60 mb-1">
+              🛠️ Status — City: <strong>{tapintoResolvedCity || cityLabel || "—"}</strong>
+            </div>
+            <div>
+              <StatusPill label="TAPinto" value={`${tapintoHeadlines.length} items`} ok={tapintoHeadlines.length > 0} />
+              <StatusPill label="NewsData used" value={`${liveCounts.newsdata}`} ok={liveCounts.apiKey} />
+              <StatusPill label="RSS used" value={`${liveCounts.rss}`} ok />
+              <StatusPill label="Curated used" value={`${liveCounts.curated}`} ok />
+              <StatusPill label="API Key" value={liveCounts.apiKey ? "on" : "off"} ok={liveCounts.apiKey} />
+              <StatusPill label="Hot Sheet" value={`${hotSheet.length}`} ok={hotSheet.length > 0} />
+              <StatusPill label="Brighter Side" value={`${thingsWeLove.length}`} ok={thingsWeLove.length > 0} />
+              <StatusPill label="Big Games" value={`${validBigGames.length}`} ok={validBigGames.length > 0} />
+            </div>
+          </div>
+        )}
+
+        <div className="text-center mb-10">
+          <h1 className="font-script text-4xl sm:text-5xl text-white drop-shadow-[0_0_6px_#ffffffaa]">
+            Talk More Tonight
+          </h1>
+          <p className="mt-2 text-white/80 italic text-sm sm:text-base">
+            {userName}, here's the news for tonight
+          </p>
+        </div>
+
+        {cityDisplay && (
+          <section className="relative rounded-2xl px-6 py-8 w-full max-w-5xl mx-auto my-10">
+            <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-40 pointer-events-none z-0" />
+            <div className="relative z-10 max-w-md sm:max-w-lg w-full mx-auto">
+              <h3 className="text-2xl font-bold mb-4 text-center text-white">Top Headlines 🗞️</h3>
+
+              <TapIntoCard
+                city={userCityDisplay}
+                stateCode={userStateDisplay}
+                variant="flip"
+                initialSide="front"
+                maxItems={3}
+                className="!bg-white !text-slate-900 !ring-0 !border !border-slate-200 !shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+              />
+            </div>
+          </section>
+        )}
+
+        <section className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20 transition-opacity duration-300">
+          <h2 className="text-lg font-bold text-white mb-3">🗞️ Tonight’s Headlines</h2>
+          <p className="text-center text-white/70 italic mb-2">
+            Some articles may not be a perfect match — kinda like dating 😉
+          </p>
+
+          {Object.entries(liveWireHeadlines)
+            .filter(([topic]) =>
+              (selectedTopics || []).some((t) => stripEmoji(t) === topic)
+            )
+            .map(([topic, stories], i) => (
+              <div key={i} className="mb-5">
+                <h3 className="text-md font-semibold text-white mb-1">
+                  {displayTopicLabel(topic, selectedTopics)}
+                </h3>
+
+                {(stories || []).slice(0, TOPIC_MAX).map((story, index) => (
+                  <StoryCard key={index} story={story} />
+                ))}
+              </div>
+            ))}
+
+          {Object.keys(liveWireHeadlines).length === 0 && (
+            <>
+              <p className="text-center text-white/70 italic mb-4">
+                No live headlines yet. Showing curated news instead.
+              </p>
+              {Array.isArray(curatedFallbacksLocal) &&
+                curatedFallbacksLocal
+                  .filter((s) =>
+                    (selectedTopics || []).some(
+                      (t) => stripEmoji(t) === stripEmoji(s.topic)
+                    )
+                  )
+                  .slice(0, TOPIC_MAX)
+                  .map((story, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md px-3 py-2 bg-[#111827] text-white mb-2 border border-white/10"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className={`${PILL_BASE} ${PILL_CURATED}`}>Curated</span>
+                        <span className="text-sm font-semibold leading-snug text-white break-words">
+                          {story.title}
+                        </span>
+                      </div>
+                      {story?.description ? (
+                        <p className="text-[12px] text-white/70 mt-1 leading-snug break-words">
+                          {snippet(story.description, 110)}
+                        </p>
+                      ) : null}
+                      <div className="mt-1 text-[10px] text-white/50 tracking-wide">
+                        {(story?.publishedAt || "").slice(0, 10)} • {story?.source}
+                      </div>
+                    </div>
+                  ))}
+            </>
+          )}
+        </section>
+
+        <section className="bg-black rounded-xl p-5 shadow border border-white/20">
+          <h2 className="text-lg font-semibold mb-4">🔥 The Hot Sheet</h2>
+
+          {Object.keys(filteredHotSheet || {}).length > 0 ? (
+            Object.entries(filteredHotSheet).map(([topic, entries], i) => (
+              <div key={i} className="mb-6">
+                <button
+                  onClick={() => setExpandedTopics((prev) =>
+                    prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+                  )}
+                  className="w-full text-left font-semibold"
+                >
+                  {displayTopicLabel(topic, selectedTopics)}{" "}
+                  {expandedTopics.includes(topic) ? "▲" : "▼"}
+                </button>
+                {expandedTopics.includes(topic) && (
+                  <div className="bg-[#111] rounded-md mt-2 px-4 py-4">
+                    {(entries || []).map((entry, j) => (
+                      <div key={j} className="mb-4">
+                        <h4 className="font-semibold text-sm mb-1">
+                          {entry.subtopic}
+                        </h4>
+                        <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                          {entry.blurb && <li>{entry.blurb}</li>}
+                          {entry.ask && (
+                            <li className="italic text-gray-300">
+                              {entry.ask.replace("[dateName]", dateName)}
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm italic text-white/50">
+              Loading your curated Hot Sheet…
+            </p>
+          )}
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-[#1e1b4b] rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🏟️ Tonight in Sports</h2>
+
+            <ul className="text-sm space-y-2 mb-4">
+              {sportsSchedules.map((item, index) => (
+                <li key={index}>
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-white hover:text-indigo-200"
+                  >
+                    {item.league} Schedule →
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="text-md font-semibold text-white mt-6 mb-2">
+              🏆 Big Games Ahead
+            </h3>
+            <ul className="text-sm space-y-4">
+              {gamesToShow.length > 0 ? (
+                gamesToShow.map((item, index) => (
+                  <li
+                    key={index}
+                    className="bg-white/5 p-3 rounded-md border border-white/10 text-white"
+                  >
+                    <div className="font-semibold flex items-center gap-2">
+                      <span className="text-lg">{getSportEmoji(item.Sport)}</span>
+                      {item.Event}
+                      <span className="text-xs text-white/70 ml-2">
+                        ({item.Sport})
+                      </span>
+                    </div>
+
+                    <div className="mt-1 text-xs text-indigo-200">
+                      {item["Date(s)"]}
+                    </div>
+                    <div className="text-xs text-indigo-200">{item.Location}</div>
+                    {item?.Notes && (
+                      <div className="mt-1 text-xs italic text-yellow-300 leading-snug break-words">
+                        {item.Notes}
+                      </div>
+                    )}
+                  </li>
+                ))
+              ) : (
+                <p className="text-sm italic text-white/60">
+                  No upcoming games available right now.
+                </p>
+              )}
+            </ul>
+
+            {cityTeams && Object.keys(cityTeams).length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-md font-semibold text-white mb-2">
+                  🏙️ Your Local Teams
+                </h3>
+                {Object.entries(cityTeams).map(([sport, teams]) => (
+                  <div key={sport} className="mb-2">
+                    <p className="text-sm font-semibold capitalize">{sport}</p>
+                    <p className="text-xs italic text-white/70">
+                      {(teams || []).join(" • ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-black rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🗣️ Conversation Deck</h2>
+            <div
+              className={`space-y-4 transition-opacity duration-500 ease-in-out ${isFading ? "opacity-0" : "opacity-100"}`}
+            >
+              {shuffledConvoCards.map((card, index) => (
+                <div
+                  key={index}
+                  className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left text-white"
+                >
+                  <p className="text-sm font-semibold mb-2">💬 {card.prompt}</p>
+                  <p className="text-xs italic text-white/70">{card.blurb}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={reshuffleCards}
+              className="mt-6 text-sm text-indigo-300 underline hover:text-indigo-100"
+            >
+              🔄 Shuffle Cards
+            </button>
+          </div>
+
+          <div className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🌟 The Brighter Side</h2>
+            {thingsWeLove.length > 0 ? (
+              thingsWeLove.map((item, index) => (
+                <div key={index} className="mb-4">
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-indigo-300 underline"
+                  >
+                    {item.title}
+                  </a>
+                  <ul className="list-disc list-inside text-xs text-white/80 mt-1 space-y-1">
+                    {safeSplit(item.bullets).map((line, i) => (
+                      <li key={i}>{String(line).trim()}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs italic text-white/50">Loading the good stuff…</p>
+            )}
+          </div>
+        </section>
+
+        <DateNightFunSection />
+
+        <section className="bg-white/5 rounded-xl p-6 shadow border border-white/10">
+          <h3 className="text-lg font-bold text-center mb-4">
+            🌙 Your Pocket Companion
+          </h3>
+          <p className="text-sm italic text-white/80 text-center mb-6">
+            A few final sparks before you head out...
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">
+                Last-Minute Confidence
+              </p>
+              <p className="text-xs italic text-white/70">{companion.confidence}</p>
+            </div>
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">Say This Tonight</p>
+              <p className="text-xs italic text-white/70">{companion.sayThis}</p>
+            </div>
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">One Last Thought</p>
+              <p className="text-xs italic text-white/70">{companion.finalThought}</p>
+            </div>
+          </div>
+        </section>
+
+        <div className="text-center mt-16 space-y-2">
+          <p className="text-xl sm:text-2xl font-script italic text-white drop-shadow-[0_0_6px_#ffffffaa]">
+            We truly hope you and {dateName} <strong>Talk More Tonight</strong>.
+          </p>
+          <p className="text-sm text-white/60">
+            © 2025 Talk More Tonight™. All rights reserved.
+          </p>
+        </div>
+
+        <div className="text-center mt-10">
+          <button
+            onClick={handleCelebrateAndReturn}
+            className="mt-8 bg-gradient-to-br from-purple-500 to-indigo-500 text-white px-6 py-2 rounded-full font-semibold shadow hover:from-purple-600 hover:to-indigo-600"
+          >
+            🌟 Back to Home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// GAS endpoints
+const KEYWORD_SHEET =
+  "https://script.google.com/macros/s/AKfycbyPcYmCl8DCGxWx1GPPWyiArQILldiWR8NDyymEJlUH9PX89LV8dJL5PRyygsXufKnb5w/exec";
+const FALLBACK_SHEET =
+  "https://script.google.com/macros/s/AKfycbxvSf4U9o7s2bWi-BQaSfSANc-E1OiMuxeqJO1USZOI4OXN-9jnrAb8E0-ws9fwtrhD/exec";
+
+export default News;
+
+
+
+
+
+
+
+// src/pages/News.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import TapIntoCard from "../components/TapIntoCard";
+
+// Sheets + utils
+import { fetchHotSheetFromSheet } from "../utils/fetchHotSheetFromSheet";
+import { fetchThingsWeLoveFromSheet } from "../utils/fetchThingsWeLoveFromSheet";
+import { fetchBigGamesFromSheet } from "../utils/fetchBigGamesFromSheet";
+import { getTAPintoHeadlinesForCity } from "../utils/rssFeeds";
+import { rerankWithLocation } from "../utils/localBoost";
+import rssTopicFeeds from "../data/rssTopicFeeds";
+import { getLiveWireHeadlinesFromNewsData } from "../utils/getLiveWireHeadlinesFromNewsData";
+
+import {
+  newsKeywordMap as localKeywordMap,
+  badWordsByTopic as localBadWords,
+} from "../data/newsKeywordMap";
+
+import conversationDeck from "../data/conversationDeck";
+import topicEmojiMap from "../data/topicEmojiMap";
+import pocketCompanionDeck from "../data/pocketCompanionDeck";
+import cityTeamMap from "../data/cityTeamMap";
+import thingsWeLoveFallback from "../data/thingsWeLoveFallback";
+import bigGamesFallback from "../data/bigGamesFallback";
+import DateNightFunSection from "../components/DateNightFunSection";
+import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFromSheet";
+import curatedFallbacksLocal from "../data/curatedFallbacks";
+
+// ✅ Sports helpers (local teams by state)
+import { getTeamsForStateAndSport } from "../utils/sportsHelpers";
+
+// =========================================
+// CONFIG
+// =========================================
+const TOPIC_MAX = 4;
+const CURATED_RESERVE = 1;
+const CACHE_VERSION = "v7-fix";
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+// =========================================
+// HELPERS
+// =========================================
+async function getNewsApiKey() {
+  const isNative =
+    typeof navigator !== "undefined" && navigator.product === "ReactNative";
+  if (isNative) {
+    try {
+      const { default: Constants } = await new Function("m", "return import(m)")(
+        "expo-constants"
+      );
+      return (
+        Constants?.expoConfig?.extra?.newsdataKey ||
+        Constants?.manifest?.extra?.newsdataKey ||
+        ""
+      );
+    } catch {}
+  }
+  return (
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_NEWSDATA_API_KEY) ||
+    (typeof process !== "undefined" && process?.env?.VITE_NEWSDATA_API_KEY) ||
+    ""
+  );
+}
+
+const getRandom = (arr = [], fallback = "") =>
+  Array.isArray(arr) && arr.length
+    ? arr[Math.floor(Math.random() * arr.length)]
+    : fallback;
+
+const stripEmoji = (s = "") =>
+  s.replace(
+    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDEFF])/g,
+    ""
+  ).trim();
+
+const stripHtml = (s = "") =>
+  String(s).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+
+const snippet = (s = "", max = 110) => {
+  const clean = stripHtml(s);
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim() + "…";
+};
+
+const displayTopicLabel = (key, selectedTopics = []) =>
+  selectedTopics.find((t) => stripEmoji(t) === key) || key;
+
+// versioned localStorage cache
+const getCache = (k, fallback) => {
+  try {
+    const raw = localStorage.getItem(k);
+    if (!raw) return fallback;
+    const { v, ts, data } = JSON.parse(raw);
+    if (v !== CACHE_VERSION) return fallback;
+    if (!ts || Date.now() - ts > CACHE_TTL_MS) return fallback;
+    return data;
+  } catch {
+    return fallback;
+  }
+};
+const setCache = (k, data) => {
+  try {
+    localStorage.setItem(
+      k,
+      JSON.stringify({ v: CACHE_VERSION, ts: Date.now(), data })
+    );
+  } catch {}
+};
+
+const safeSplit = (val) =>
+  Array.isArray(val) ? val : val?.split ? val.split(/[,•\n]/) : [];
+
+// =========================================
+// GLOBAL NSFW FILTER
+// =========================================
+const NSFW_TERMS = ["porn","xxx","nsfw","onlyfans","stripclub","escort"];
+const NSFW_DOMAIN_DENY = ["pornhub.com","xvideos.com","onlyfans.com"];
+function isStoryNSFW(story = {}) {
+  const raw = `${story.title || ""} ${story.description || ""}`.toLowerCase();
+  if (NSFW_TERMS.some(t => raw.includes(t))) return true;
+  const host = (() => { try { return new URL(story.url).hostname; } catch { return ""; }})();
+  if (NSFW_DOMAIN_DENY.some(d => host.endsWith(d))) return true;
+  return false;
+}
+
+// =========================================
+// SPORTS HELPERS
+// =========================================
+function getSportEmoji(sport) {
+  if (!sport) return "🏅";
+  const foundKey = Object.keys(topicEmojiMap).find((key) =>
+    key.toLowerCase().startsWith(String(sport).toLowerCase())
+  );
+  return foundKey ? topicEmojiMap[foundKey] : "🏅";
+}
+// =========================================
+// SCORING
+// =========================================
+function scoreStoryByTopic(story = {}, topic = "", cityLabel = "", cityTeams = null, teamsToWatchLower = []) {
+  if (isStoryNSFW(story)) return -999;
+
+  let s = 0;
+  if (story.sourceType === "newsdata") s += 1;
+  else if (story.sourceType === "rss") s += 0.5;
+  else if (story.isFallback) s += 0.25;
+
+  const txt = `${story.title || ""} ${story.description || ""}`.toLowerCase();
+
+  const cfg = localKeywordMap[topic] || {};
+  const bads = localBadWords[topic] || [];
+  if (bads.some(word => txt.includes(word.toLowerCase()))) return -999;
+  if ((cfg.mustIncludeAny || []).length && !cfg.mustIncludeAny.some(t => txt.includes(t.toLowerCase()))) return -999;
+
+  const d = new Date(story.publishedAt || story.pubDate || Date.now());
+  const days = (Date.now() - d.getTime()) / 86400000;
+  if (days > 30) s -= 1;
+
+  return s;
+}
+
+function refineTopic(items = [], topic = "", cityLabel = "", cityTeams = null, max = TOPIC_MAX, teamsToWatchLower = []) {
+  const filtered = (items || [])
+    .map(st => ({ st, score: scoreStoryByTopic(st, topic, cityLabel, cityTeams, teamsToWatchLower) }))
+    .filter(x => x.score > -999)
+    .sort((a,b) => b.score - a.score)
+    .map(x => x.st);
+
+  return filtered.slice(0, max);
+}
+
+// =========================================
+// UI styles
+// =========================================
+const PILL_BASE    = "text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 border";
+const PILL_CURATED = "bg-teal-500/20 text-teal-200 border-teal-500/40";
+const PILL_LIVE    = "bg-yellow-300/20 text-yellow-100 border-yellow-300/40";
+
+// =========================================
+// Story Card
+// =========================================
+function StoryCard({ story }) {
+  const base = "rounded-md px-3 py-2 border border-white/10 shadow-sm transition bg-[#111827] text-white group";
+  const inner = (
+    <>
+      <div className="flex items-start gap-2">
+        <span className={`${PILL_BASE} ${story?.isFallback ? PILL_CURATED : PILL_LIVE}`}>
+          {story?.isFallback ? "Curated" : "Live"}
+        </span>
+        {story?.isFallback || !story?.url ? (
+          <span className="text-sm font-semibold leading-snug break-words">
+            {story.title}
+          </span>
+        ) : (
+          <a href={story.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold leading-snug break-words underline-offset-2 group-hover:underline">
+            {story.title} ↗
+          </a>
+        )}
+      </div>
+      {story?.description && (
+        <p className="text-[12px] text-white/70 mt-1 leading-snug break-words">
+          {snippet(story.description, 110)}
+        </p>
+      )}
+      <div className="mt-1 text-[10px] text-white/50 tracking-wide">
+        {(story?.publishedAt || story?.pubDate || "").slice(0, 10)} • {story?.source}
+      </div>
+    </>
+  );
+  return <div className={base}>{inner}</div>;
+}
+
+// =========================================
+// MAIN COMPONENT
+// =========================================
+const News = () => {
+  const navigate = useNavigate();
+  const { userData, includeDateTeams, dateTeams } = useUser();
+
+  const [tapintoHeadlines, setTapintoHeadlines] = useState([]);
+  const [tapintoResolvedCity, setTapintoResolvedCity] = useState("");
+  const [liveWireHeadlines, setLiveWireHeadlines] = useState({});
+  const [liveCounts, setLiveCounts] = useState({ apiKey: false, newsdata: 0, rss: 0, curated: 0 });
+  const [expandedTopics, setExpandedTopics] = useState([]);
+  const [hotSheet, setHotSheet] = useState(() => getCache("hotSheet", []));
+  const [filteredHotSheet, setFilteredHotSheet] = useState({});
+  const [thingsWeLove, setThingsWeLove] = useState(() => getCache("thingsWeLove", []));
+  const [bigGames, setBigGames] = useState(() => getCache("bigGames", []));
+  const [shuffledConvoCards, setShuffledConvoCards] = useState(() =>
+    [...conversationDeck].sort(() => 0.5 - Math.random()).slice(0, 3)
+  );
+  const [isFading, setIsFading] = useState(false);
+
+  const liveLockRef = React.useRef(false);
+  const lastLiveRunAtRef = React.useRef(0);
+  const LIVE_COOLDOWN_MS = 12000;
+
+  const { userName = "You", dateName = "your date", city: cityRaw = "", selectedTopics = [], subtopicAnswers = {} } = userData || {};
+
+  const { cityName, state, label: cityLabel } = useMemo(() => {
+    const s = String(cityRaw || "").trim();
+    const parts = s.split(",").map((p) => p.trim());
+    return { cityName: parts[0] || "", state: parts[1] || "", label: s };
+  }, [cityRaw]);
+
+  // TAPinto resolver
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setTapintoHeadlines([]);
+      for (const cand of [cityLabel, cityName]) {
+        try {
+          const data = await getTAPintoHeadlinesForCity(cand);
+          if (!cancelled && Array.isArray(data) && data.length > 0) {
+            setTapintoHeadlines(data);
+            setTapintoResolvedCity(cand);
+            return;
+          }
+        } catch {}
+      }
+    };
+    if (cityLabel) run();
+    return () => { cancelled = true; };
+  }, [cityLabel, cityName]);
+
+  // Live headlines fetcher (API → RSS → Curated)
+  const fetchLive = async () => {
+    if (liveLockRef.current) return;
+    const now = Date.now();
+    if (now - lastLiveRunAtRef.current < LIVE_COOLDOWN_MS) return;
+    liveLockRef.current = true;
+
+    try {
+      const apiKey = await getNewsApiKey();
+      const baseTopics = (selectedTopics || []).map((t) => stripEmoji(t));
+
+      let liveByTopic = {};
+      if (apiKey) {
+        liveByTopic = await getLiveWireHeadlinesFromNewsData({ topics: baseTopics, perTopic: TOPIC_MAX });
+      }
+
+      const curatedArr = await fetchCuratedFallbacksFromSheet(FALLBACK_SHEET, {
+        topicsFilter: baseTopics, limitPerTopic: TOPIC_MAX,
+      }).catch(() => curatedFallbacksLocal);
+
+      const groupedCurated = curatedArr.reduce((acc, a) => {
+        const key = stripEmoji(a.topic);
+        (acc[key] ||= []).push({ ...a, isFallback: true, sourceType: "curated" });
+        return acc;
+      }, {});
+
+      const merged = {};
+      const usedCounts = { newsdata: 0, rss: 0, curated: 0 };
+      const allTopics = new Set([...baseTopics, ...Object.keys(liveByTopic), ...Object.keys(groupedCurated)]);
+
+      for (const t of allTopics) {
+        const live = (liveByTopic[t] || []).map(x => ({
+          ...x,
+          sourceType: "newsdata",
+          url: x.link || x.url,
+          publishedAt: x.pubDate || x.publishedAt,
+          isFallback: false,
+        })).filter(s => !isStoryNSFW(s));
+
+        usedCounts.newsdata += live.length;
+
+        const curated = (groupedCurated[t] || []).filter(s => !isStoryNSFW(s));
+        usedCounts.curated += curated.length;
+
+        const out = [...live];
+        if (out.length < TOPIC_MAX) {
+          curated.forEach(c => { if (out.length < TOPIC_MAX) out.push(c); });
+        }
+        merged[t] = refineTopic(out, t, cityLabel, null, TOPIC_MAX, []);
+      }
+
+      setLiveWireHeadlines(merged);
+      setLiveCounts({ apiKey: !!apiKey, ...usedCounts });
+    } catch (e) {
+      console.warn("[News] live fetch failed:", e?.message || e);
+    } finally {
+      lastLiveRunAtRef.current = Date.now();
+      liveLockRef.current = false;
+    }
+  };
+  // Load sheets + live
+  useEffect(() => {
+    const HOT_SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFcfO2X43yTcfzsAS5WY80lwEXfC5zNQDiPAS1We9jNSPXgiqFMs7CfoQOTv1C0RFn-dxU5NrkpuyY/pub?output=csv";
+
+    const fetchAll = async () => {
+      try {
+        const [hot, love, games] = await Promise.all([
+          fetchHotSheetFromSheet(`${HOT_SHEET_URL}&cb=${Math.floor(Date.now()/60000)}`),
+          fetchThingsWeLoveFromSheet().catch(() => thingsWeLoveFallback),
+          fetchBigGamesFromSheet().catch(() => bigGamesFallback),
+        ]);
+
+        setHotSheet(hot);
+        setCache("hotSheet", hot);
+        setThingsWeLove(love);
+        setCache("thingsWeLove", love);
+        setBigGames(games);
+        setCache("bigGames", games);
+
+        const matched = hot.filter((item) => {
+          const topicKey = stripEmoji(item.topic);
+          const subs = (subtopicAnswers[topicKey] || []).map(stripEmoji);
+          return (selectedTopics || []).some((t) => stripEmoji(t) === topicKey) &&
+                 (subs.length === 0 || subs.includes(stripEmoji(item.subtopic)));
+        });
+
+        const grouped = {};
+        matched.forEach((entry) => {
+          const k = stripEmoji(entry.topic);
+          (grouped[k] ||= []).push(entry);
+        });
+        setFilteredHotSheet(grouped);
+      } catch (err) {
+        console.error("🔥 Error loading sheets:", err);
+      }
+    };
+
+    fetchAll();
+    if ((selectedTopics || []).length > 0) {
+      fetchLive();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTopics, subtopicAnswers, cityLabel]);
+
+  const reshuffleCards = () => {
+    setIsFading(true);
+    setTimeout(() => {
+      setShuffledConvoCards([...conversationDeck].sort(() => 0.5 - Math.random()).slice(0, 3));
+      setIsFading(false);
+    }, 300);
+  };
+
+  const handleCelebrateAndReturn = async () => {
+    try {
+      if (!IS_NATIVE && typeof window !== "undefined" && webConfetti) {
+        webConfetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      }
+    } catch {}
+    setTimeout(() => navigate("/"), 1200);
+  };
+
+  const validBigGames = (bigGames || []).filter(
+    (game) => game && game.Event?.trim() && game.Sport?.trim() && game["Date(s)"]?.trim()
+  );
+
+  const gamesToShow = validBigGames.slice(0, 4);
+
+  const StatusPill = ({ label, value, ok = true }) => (
+    <span
+      className={`text-[11px] px-2 py-1 rounded-full border mr-2 mb-2 inline-block ${
+        ok
+          ? "bg-emerald-600/20 text-emerald-200 border-emerald-400/30"
+          : "bg-rose-600/20 text-rose-200 border-rose-400/30"
+      }`}
+    >
+      <strong>{label}:</strong> {value}
+    </span>
+  );
+
+  // =========================
+  // RENDER
+  // =========================
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#312e81] to-[#a78bfa] text-white px-4 py-10 relative">
+      <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-40 pointer-events-none z-0" />
+      <div className="relative z-10 max-w-5xl mx-auto space-y-10">
+        
+        {/* DEV STATUS */}
+        {isDev && (
+          <div className="rounded-xl border border-white/20 bg-black/40 p-3 mt-2">
+            <div className="text-xs text-white/60 mb-1">
+              🛠️ Status — City: <strong>{tapintoResolvedCity || cityLabel || "—"}</strong>
+            </div>
+            <div>
+              <StatusPill label="TAPinto" value={`${tapintoHeadlines.length} items`} ok={tapintoHeadlines.length > 0} />
+              <StatusPill label="NewsData used" value={`${liveCounts.newsdata}`} ok={liveCounts.apiKey} />
+              <StatusPill label="RSS used" value={`${liveCounts.rss}`} ok />
+              <StatusPill label="Curated used" value={`${liveCounts.curated}`} ok />
+              <StatusPill label="API Key" value={liveCounts.apiKey ? "on" : "off"} ok={liveCounts.apiKey} />
+              <StatusPill label="Hot Sheet" value={`${hotSheet.length}`} ok={hotSheet.length > 0} />
+              <StatusPill label="Brighter Side" value={`${thingsWeLove.length}`} ok={thingsWeLove.length > 0} />
+              <StatusPill label="Big Games" value={`${validBigGames.length}`} ok={validBigGames.length > 0} />
+            </div>
+          </div>
+        )}
+
+        {/* Hero */}
+        <div className="text-center mb-10">
+          <h1 className="font-script text-4xl sm:text-5xl text-white drop-shadow-[0_0_6px_#ffffffaa]">
+            Talk More Tonight
+          </h1>
+          <p className="mt-2 text-white/80 italic text-sm sm:text-base">
+            {userName}, here's the news for tonight
+          </p>
+        </div>
+
+        {cityDisplay && (
+          <section className="relative rounded-2xl px-6 py-8 w-full max-w-5xl mx-auto my-10">
+            <div className="absolute inset-0 bg-[url('/stars-explosion.svg')] bg-cover bg-center opacity-40 pointer-events-none z-0" />
+            <div className="relative z-10 max-w-md sm:max-w-lg w-full mx-auto">
+              <h3 className="text-2xl font-bold mb-4 text-center text-white">Top Headlines 🗞️</h3>
+
+              <TapIntoCard
+                city={userCityDisplay}
+                stateCode={userStateDisplay}
+                variant="flip"
+                initialSide="front"
+                maxItems={3}
+                className="!bg-white !text-slate-900 !ring-0 !border !border-slate-200 !shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+              />
+            </div>
+          </section>
+        )}
+
+        {/* Live Headlines */}
+        <section className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20 transition-opacity duration-300">
+          <h2 className="text-lg font-bold text-white mb-3">🗞️ Tonight’s Headlines</h2>
+          <p className="text-center text-white/70 italic mb-2">
+            Some articles may not be a perfect match — kinda like dating 😉
+          </p>
+
+          {Object.entries(liveWireHeadlines)
+            .filter(([topic]) => (selectedTopics || []).some((t) => stripEmoji(t) === topic))
+            .map(([topic, stories], i) => (
+              <div key={i} className="mb-5">
+                <h3 className="text-md font-semibold text-white mb-1">
+                  {displayTopicLabel(topic, selectedTopics)}
+                </h3>
+                {(stories || []).slice(0, TOPIC_MAX).map((story, index) => (
+                  <StoryCard key={index} story={story} />
+                ))}
+              </div>
+            ))}
+
+          {Object.keys(liveWireHeadlines).length === 0 && (
+            <>
+              <p className="text-center text-white/70 italic mb-4">
+                No live headlines yet. Showing curated news instead.
+              </p>
+              {Array.isArray(curatedFallbacksLocal) &&
+                curatedFallbacksLocal
+                  .filter((s) =>
+                    (selectedTopics || []).some(
+                      (t) => stripEmoji(t) === stripEmoji(s.topic)
+                    )
+                  )
+                  .slice(0, TOPIC_MAX)
+                  .map((story, i) => (
+                    <div key={i} className="rounded-md px-3 py-2 bg-[#111827] text-white mb-2 border border-white/10">
+                      <div className="flex items-start gap-2">
+                        <span className={`${PILL_BASE} ${PILL_CURATED}`}>Curated</span>
+                        <span className="text-sm font-semibold leading-snug text-white break-words">
+                          {story.title}
+                        </span>
+                      </div>
+                      {story?.description ? (
+                        <p className="text-[12px] text-white/70 mt-1 leading-snug break-words">
+                          {snippet(story.description, 110)}
+                        </p>
+                      ) : null}
+                      <div className="mt-1 text-[10px] text-white/50 tracking-wide">
+                        {(story?.publishedAt || "").slice(0, 10)} • {story?.source}
+                      </div>
+                    </div>
+                  ))}
+            </>
+          )}
+        </section>
+
+        {/* Hot Sheet */}
+        <section className="bg-black rounded-xl p-5 shadow border border-white/20">
+          <h2 className="text-lg font-semibold mb-4">🔥 The Hot Sheet</h2>
+          {Object.keys(filteredHotSheet || {}).length > 0 ? (
+            Object.entries(filteredHotSheet).map(([topic, entries], i) => (
+              <div key={i} className="mb-6">
+                <button
+                  onClick={() =>
+                    setExpandedTopics((prev) =>
+                      prev.includes(topic)
+                        ? prev.filter((t) => t !== topic)
+                        : [...prev, topic]
+                    )
+                  }
+                  className="w-full text-left font-semibold"
+                >
+                  {displayTopicLabel(topic, selectedTopics)}{" "}
+                  {expandedTopics.includes(topic) ? "▲" : "▼"}
+                </button>
+                {expandedTopics.includes(topic) && (
+                  <div className="bg-[#111] rounded-md mt-2 px-4 py-4">
+                    {(entries || []).map((entry, j) => (
+                      <div key={j} className="mb-4">
+                        <h4 className="font-semibold text-sm mb-1">{entry.subtopic}</h4>
+                        <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                          {entry.blurb && <li>{entry.blurb}</li>}
+                          {entry.ask && (
+                            <li className="italic text-gray-300">
+                              {entry.ask.replace("[dateName]", dateName)}
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm italic text-white/50">
+              Loading your curated Hot Sheet…
+            </p>
+          )}
+        </section>
+
+        {/* Sports + Big Games */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="bg-[#1e1b4b] rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🏟️ Tonight in Sports</h2>
+            <ul className="text-sm space-y-2 mb-4">
+              {sportsSchedules.map((item, index) => (
+                <li key={index}>
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-white hover:text-indigo-200"
+                  >
+                    {item.league} Schedule →
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <h3 className="text-md font-semibold text-white mt-6 mb-2">🏆 Big Games Ahead</h3>
+            <ul className="text-sm space-y-4">
+              {gamesToShow.length > 0 ? (
+                gamesToShow.map((item, index) => (
+                  <li key={index} className="bg-white/5 p-3 rounded-md border border-white/10 text-white">
+                    <div className="font-semibold flex items-center gap-2">
+                      <span className="text-lg">{getSportEmoji(item.Sport)}</span>
+                      {item.Event}
+                      <span className="text-xs text-white/70 ml-2">({item.Sport})</span>
+                    </div>
+                    <div className="mt-1 text-xs text-indigo-200">{item["Date(s)"]}</div>
+                    <div className="text-xs text-indigo-200">{item.Location}</div>
+                    {item?.Notes && (
+                      <div className="mt-1 text-xs italic text-yellow-300 leading-snug break-words">
+                        {item.Notes}
+                      </div>
+                    )}
+                  </li>
+                ))
+              ) : (
+                <p className="text-sm italic text-white/60">No upcoming games available right now.</p>
+              )}
+            </ul>
+          </div>
+
+          {/* Conversation Deck */}
+          <div className="bg-black rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🗣️ Conversation Deck</h2>
+            <div
+              className={`space-y-4 transition-opacity duration-500 ease-in-out ${
+                isFading ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {shuffledConvoCards.map((card, index) => (
+                <div key={index} className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left text-white">
+                  <p className="text-sm font-semibold mb-2">💬 {card.prompt}</p>
+                  <p className="text-xs italic text-white/70">{card.blurb}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={reshuffleCards}
+              className="mt-6 text-sm text-indigo-300 underline hover:text-indigo-100"
+            >
+              🔄 Shuffle Cards
+            </button>
+          </div>
+
+          {/* Brighter Side */}
+          <div className="bg-[#1e293b] rounded-xl p-5 shadow border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3">🌟 The Brighter Side</h2>
+            {thingsWeLove.length > 0 ? (
+              thingsWeLove.map((item, index) => (
+                <div key={index} className="mb-4">
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-indigo-300 underline"
+                  >
+                    {item.title}
+                  </a>
+                  <ul className="list-disc list-inside text-xs text-white/80 mt-1 space-y-1">
+                    {safeSplit(item.bullets).map((line, i) => (
+                      <li key={i}>{String(line).trim()}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs italic text-white/50">Loading the good stuff…</p>
+            )}
+          </div>
+        </section>
+
+        {/* Pocket Companion */}
+        <DateNightFunSection />
+        <section className="bg-white/5 rounded-xl p-6 shadow border border-white/10">
+          <h3 className="text-lg font-bold text-center mb-4">🌙 Your Pocket Companion</h3>
+          <p className="text-sm italic text-white/80 text-center mb-6">
+            A few final sparks before you head out...
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">Last-Minute Confidence</p>
+              <p className="text-xs italic text-white/70">{companion.confidence}</p>
+            </div>
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">Say This Tonight</p>
+              <p className="text-xs italic text-white/70">{companion.sayThis}</p>
+            </div>
+            <div className="bg-[#111] p-4 rounded-xl shadow-md border border-white/10 text-left">
+              <p className="text-sm font-semibold text-white mb-1">One Last Thought</p>
+              <p className="text-xs italic text-white/70">{companion.finalThought}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <div className="text-center mt-16 space-y-2">
+          <p className="text-xl sm:text-2xl font-script italic text-white drop-shadow-[0_0_6px_#ffffffaa]">
+            We truly hope you and {dateName} <strong>Talk More Tonight</strong>.
+          </p>
+          <p className="text-sm text-white/60">© 2025 Talk More Tonight™. All rights reserved.</p>
+        </div>
+
+        <div className="text-center mt-10">
+          <button
+            onClick={handleCelebrateAndReturn}
+            className="mt-8 bg-gradient-to-br from-purple-500 to-indigo-500 text-white px-6 py-2 rounded-full font-semibold shadow hover:from-purple-600 hover:to-indigo-600"
+          >
+            🌟 Back to Home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// GAS endpoints
+const KEYWORD_SHEET =
+  "https://script.google.com/macros/s/AKfycbyPcYmCl8DCGxWx1GPPWyiArQILldiWR8NDyymEJlUH9PX89LV8dJL5PRyygsXufKnb5w/exec";
+const FALLBACK_SHEET =
+  "https://script.google.com/macros/s/AKfycbxvSf4U9o7s2bWi-BQaSfSANc-E1OiMuxeqJO1USZOI4OXN-9jnrAb8E0-ws9fwtrhD/exec";
+
+export default News;
+
