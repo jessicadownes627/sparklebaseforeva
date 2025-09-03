@@ -96,19 +96,35 @@ const News = () => {
     loadLiveWire();
   }, [city, selectedTopics, includeDateTeams, dateTeams]);
 
-  // --- Curated Fallbacks (Google Sheet)
-  useEffect(() => {
-    const loadFallbacks = async () => {
-      try {
-        const fb = await fetchCuratedFallbacksFromSheet();
-        setCuratedFallbacks(fb || {});
-      } catch (err) {
-        console.error("Curated fallbacks error", err);
-        setCuratedFallbacks({});
-      }
-    };
-    loadFallbacks();
-  }, []);
+ // --- Curated Fallbacks (Google Sheet)
+useEffect(() => {
+  const loadFallbacks = async () => {
+    try {
+      const fb = await fetchCuratedFallbacksFromSheet();
+      console.log("=== DEBUG FALLBACKS RAW ===", fb);
+
+      setCuratedFallbacks(fb || {});
+    } catch (err) {
+      console.error("Curated fallbacks error", err);
+      setCuratedFallbacks({});
+    }
+  };
+  loadFallbacks();
+}, []);
+
+// --- Extra debug logging
+useEffect(() => {
+  console.log("=== DEBUG SELECTED TOPICS ===");
+  selectedTopics.forEach((t) => {
+    console.log("Selected:", JSON.stringify(t));
+  });
+
+  console.log("=== DEBUG FALLBACK TOPIC KEYS ===");
+  Object.keys(curatedFallbacks || {}).forEach((key) => {
+    console.log("Fallback:", JSON.stringify(key));
+  });
+}, [curatedFallbacks, selectedTopics]);
+
 
   // --- Hot Sheet
   useEffect(() => {
