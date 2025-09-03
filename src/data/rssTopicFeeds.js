@@ -1,12 +1,15 @@
+// src/data/rssTopicFeeds.js
+// Clean and reliable RSS feeds for all topics
+
 const feeds = {
   // 🧠 Smart & Curious
   "Politics 🗳️": [
-    "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
-    "https://www.politico.com/rss/politics08.xml"
+    "https://feeds.npr.org/1014/rss.xml",              // NPR Politics :contentReference[oaicite:1]{index=1}
+    "https://apnews.com/politics.rss"                 // AP News Politics :contentReference[oaicite:2]{index=2}
   ],
   "Talk of the Country 🇺🇸": [
-    "https://rss.nytimes.com/services/xml/rss/nyt/US.xml",
-    "https://www.npr.org/rss/rss.php?id=1003"
+    "https://apnews.com/rss/apf-usnews.xml",          // AP US News
+    "https://feeds.npr.org/1003/rss.xml"
   ],
   "Tech & Gadgets 💻": [
     "https://www.theverge.com/rss/index.xml",
@@ -14,19 +17,19 @@ const feeds = {
   ],
   "Business & Money 💼": [
     "https://feeds.marketwatch.com/marketwatch/topstories/",
-    "https://www.reuters.com/markets/rss" // safer Reuters feed
+    "https://www.reuters.com/markets/rss"
   ],
   "Legal Drama ⚖️": [
-    "https://www.law360.com/ (check if they offer an RSS for site updates)",
-    "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/section/us.law/rss.xml"
+    "https://www.reuters.com/legal/rss",
+    "https://www.law.com/rss"
   ],
   "True Crime 🔪": [
-    "https://www.cbsnews.com/latest/rss/crime/",
-    "https://feeds.megaphone.fm/crimejunkiepodcast" // popular true crime podcast feed
+    "https://rss.nytimes.com/services/xml/rss/nyt/Crime.xml",
+    "https://www.courtlistener.com/feed/"
   ],
   "Environment & Climate 🌍": [
-    "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml",
-    "https://www.npr.org/rss/rss.php?id=1025"
+    "https://feeds.npr.org/1025/rss.xml",
+    "https://www.theguardian.com/environment/rss"
   ],
   "AI & Future Tech 🤖": [
     "https://www.technologyreview.com/feed/",
@@ -36,11 +39,11 @@ const feeds = {
   // 🌍 Culture & Entertainment
   "Travel ✈️": [
     "https://www.travelandleisure.com/rss",
-    "https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml"
+    "https://www.lonelyplanet.com/news/rss"
   ],
   "Food & Restaurants 🍝": [
-    "https://www.eater.com/rss/index.xml",
-    "https://www.foodandwine.com/rss"
+    "https://www.seriouseats.com/rss",
+    "https://www.foodnetwork.com/content/food-com/en/rss.xml"
   ],
   "Health & Fitness 🧘": [
     "https://www.medicalnewstoday.com/rss",
@@ -55,7 +58,7 @@ const feeds = {
     "https://www.theverge.com/deals/rss/index.xml"
   ],
   "Book Buzz 📚": [
-    "https://www.npr.org/rss/rss.php?id=1032",
+    "https://lithub.com/feed/",
     "https://www.publishersweekly.com/pw/feeds/index.rss"
   ],
   "Art & Museums 🖼️": [
@@ -64,7 +67,7 @@ const feeds = {
   ],
   "Dating & Relationships ❤️": [
     "https://www.cosmopolitan.com/rss/dating-relationships.xml",
-    "https://www.psychologytoday.com/us/topics/relationships/rss.xml"
+    "https://www.psychologytoday.com/atom/49836"
   ],
   "Viral & Memes 📱": [
     "https://mashable.com/feeds/rss/",
@@ -77,16 +80,16 @@ const feeds = {
     "https://www.billboard.com/feed/"
   ],
   "Film 🎬": [
-    "https://www.hollywoodreporter.com/movies/movie-news/feed/",
-    "https://feeds.feedburner.com/ScreenRant" // active film & entertainment site
+    "https://variety.com/v/film/feed/",
+    "https://www.indiewire.com/c/film/feed/"
   ],
   "TV Shows 📺": [
-    "https://www.hollywoodreporter.com/tv/tv-news/feed/",
-    "https://rss.nytimes.com/services/xml/rss/nyt/Television.xml"
+    "https://tvline.com/feed/",
+    "https://www.hollywoodreporter.com/tv/tv-news/feed/"
   ],
   "Streaming & Reality 💅": [
-    "https://www.vulture.com/rss/reality-tv/index.xml",
-    "https://feeds.feedburner.com/vulture/streaming" // other Vulture-specific feed
+    "https://decider.com/feed/",
+    "https://www.realityblurred.com/realitytv/feed/"
   ],
   "Celebrity News 🌟": [
     "https://www.etonline.com/news/rss",
@@ -106,33 +109,33 @@ const feeds = {
   ],
   "Podcasts 🎧": [
     "https://podnews.net/rss",
-    "https://feeds.megaphone.com/the-vergecast" // Verge podcast
+    "https://feeds.megaphone.fm/vergecast"
   ],
 
   // 🏆 Sports & Action
   "Football 🏈": [
-    "https://www.espn.com/espn/rss/nfl/news",
-    "https://www.cbssports.com/rss/headlines/nfl/"
+    "https://www.espn.com/espn/rss/nfl/news.xml",
+    "https://feeds.si.com/rss/si_nfl"
   ],
   "Basketball 🏀": [
-    "https://www.espn.com/espn/rss/nba/news",
-    "https://www.cbssports.com/rss/headlines/nba/"
+    "https://www.espn.com/espn/rss/nba/news.xml",
+    "https://feeds.si.com/rss/si_nba"
   ],
   "Baseball ⚾": [
-    "https://www.espn.com/espn/rss/mlb/news",
+    "https://www.espn.com/espn/rss/mlb/news.xml",
     "https://www.mlbtraderumors.com/feed"
   ],
   "Hockey 🏒": [
-    "https://www.espn.com/espn/rss/nhl/news",
+    "https://www.espn.com/espn/rss/nhl/news.xml",
     "https://www.nhl.com/rss/news"
   ],
   "Golf ⛳": [
-    "https://www.espn.com/espn/rss/golf/news",
+    "https://www.espn.com/espn/rss/golf/news.xml",
     "https://www.golfdigest.com/feed/rss"
   ],
   "College Sports 🎓": [
-    "https://www.espn.com/espn/rss/ncf/news",
-    "https://www.espn.com/espn/rss/ncb/news"
+    "https://www.espn.com/espn/rss/ncf/news.xml",
+    "https://www.espn.com/espn/rss/ncb/news.xml"
   ],
   "Olympics 🏅": [
     "https://olympics.com/en/news.rss",
@@ -143,7 +146,7 @@ const feeds = {
     "https://www.actionnetwork.com/feed"
   ],
 
-  // 🎉 What’s Hot
+  // 🎉  What’s Hot
   "Concert Tours 🎤": [
     "https://www.rollingstone.com/music/music-news/feed/",
     "https://www.billboard.com/feed/"
@@ -153,23 +156,23 @@ const feeds = {
     "https://consequence.net/feed/"
   ],
   "Trending Events 🎉": [
-    "https://apnews.com/rss",
+    "https://apnews.com/rss/apf-topnews.xml",
     "https://www.usatoday.com/record/rss/news/"
   ],
   "Holiday Happenings 🎁": [
     "https://www.countryliving.com/rss/",
-    "https://www.townie.com/rss"
+    "https://www.goodhousekeeping.com/holidays/rss/"
   ],
   "Major Weather Events ⛈️": [
-    "https://www.accuweather.com/en/rss",
+    "https://www.weather.com/rss",
     "https://www.weather.gov/rss_page.php?site_name=nws"
   ],
   "Space & UFOs 🛸": [
-    "https://www.space.com/feeds/all",
-    "https://www.nasa.gov/rss/dyn/breaking_news.rss"
+    "https://www.nasa.gov/rss/dyn/breaking_news.rss",
+    "https://www.space.com/feeds/all"
   ],
   "Wildcard 🃏": [
-    "https://www.npr.org/rss/rss.php?id=1001",
+    "https://feeds.npr.org/1001/rss.xml",
     "https://mashable.com/feeds/rss/"
   ]
 };

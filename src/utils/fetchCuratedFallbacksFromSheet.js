@@ -6,9 +6,26 @@ export async function fetchCuratedFallbacksFromSheet() {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
     const data = await response.json();
-    return data;
+
+    // Transform into object keyed by topic
+    const grouped = {};
+    data.forEach((row) => {
+      const topic = row.topic?.trim();
+      if (!topic) return;
+
+      if (!grouped[topic]) grouped[topic] = [];
+      grouped[topic].push({
+        title: row.title,
+        description: row.description,
+        source: row.source,
+        publishedAt: row.publishedAt,
+      });
+    });
+
+    console.log("✅ Curated Fallbacks Loaded:", grouped);
+    return grouped;
   } catch (error) {
-    console.error("Error fetching Curated Fallbacks from sheet:", error);
-    return [];
+    console.error("❌ Error fetching Curated Fallbacks from sheet:", error);
+    return {};
   }
 }
