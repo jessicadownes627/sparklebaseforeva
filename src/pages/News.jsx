@@ -17,18 +17,13 @@ import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFr
 import getTeamsForCity from "../utils/getTeamsForCity";
 
 // Data
-import {
-  newsKeywordMap as localKeywordMap,
-  badWordsByTopic as localBadWords,
-} from "../data/newsKeywordMap";
-import conversationDeck from "../data/conversationDeck";
 import topicEmojiMap from "../data/topicEmojiMap";
+import conversationDeck from "../data/conversationDeck";
 import pocketCompanionDeck from "../data/pocketCompanionDeck";
 
 // Sports helpers
 import { SPORT_KEYS } from "../utils/sportsHelpers";
 
-// Map ESPN schedule URLs
 const ESPN_SCHEDULES = {
   Baseball: "https://www.espn.com/mlb/schedule",
   Football: "https://www.espn.com/nfl/schedule",
@@ -58,22 +53,21 @@ const News = () => {
   const [conversationCards, setConversationCards] = useState([]);
   const [pocketCards, setPocketCards] = useState([]);
 
-  // --- TAPInto (NJ only, hide if not available)
+  // TAPInto
   useEffect(() => {
     const loadTAPinto = async () => {
       if (!city) return;
       try {
         const headlines = await getTAPintoHeadlinesForCity(city);
         setTapintoHeadlines(headlines || []);
-      } catch (err) {
-        console.error("TAPInto error", err);
+      } catch {
         setTapintoHeadlines([]);
       }
     };
     loadTAPinto();
   }, [city]);
 
-  // --- LiveWire: headlines by topic + teams
+  // LiveWire
   useEffect(() => {
     const loadLiveWire = async () => {
       try {
@@ -82,51 +76,31 @@ const News = () => {
 
         const headlines = await getLiveWireHeadlines({
           topics: selectedTopics,
-          localKeywordMap,
-          localBadWords,
           teams: { ...localTeams, extra: teamsArray },
         });
 
         setLiveHeadlines(headlines || {});
-      } catch (err) {
-        console.error("LiveWire error", err);
+      } catch {
         setLiveHeadlines({});
       }
     };
     loadLiveWire();
   }, [city, selectedTopics, includeDateTeams, dateTeams]);
 
- // --- Curated Fallbacks (Google Sheet)
-useEffect(() => {
-  const loadFallbacks = async () => {
-    try {
-      const fb = await fetchCuratedFallbacksFromSheet();
-      console.log("=== DEBUG FALLBACKS RAW ===", fb);
+  // Curated fallbacks
+  useEffect(() => {
+    const loadFallbacks = async () => {
+      try {
+        const fb = await fetchCuratedFallbacksFromSheet();
+        setCuratedFallbacks(fb || {});
+      } catch {
+        setCuratedFallbacks({});
+      }
+    };
+    loadFallbacks();
+  }, []);
 
-      setCuratedFallbacks(fb || {});
-    } catch (err) {
-      console.error("Curated fallbacks error", err);
-      setCuratedFallbacks({});
-    }
-  };
-  loadFallbacks();
-}, []);
-
-// --- Extra debug logging
-useEffect(() => {
-  console.log("=== DEBUG SELECTED TOPICS ===");
-  selectedTopics.forEach((t) => {
-    console.log("Selected:", JSON.stringify(t));
-  });
-
-  console.log("=== DEBUG FALLBACK TOPIC KEYS ===");
-  Object.keys(curatedFallbacks || {}).forEach((key) => {
-    console.log("Fallback:", JSON.stringify(key));
-  });
-}, [curatedFallbacks, selectedTopics]);
-
-
-  // --- Hot Sheet
+  // Hot Sheet
   useEffect(() => {
     const loadHotSheet = async () => {
       try {
@@ -136,49 +110,46 @@ useEffect(() => {
           if (sheetData[sub]) filtered[sub] = sheetData[sub];
         });
         setHotSheet(filtered);
-      } catch (err) {
-        console.error("Hot Sheet error", err);
+      } catch {
         setHotSheet({});
       }
     };
     loadHotSheet();
   }, [subtopicAnswers]);
 
-  // --- Sports: Big Games
+  // Big Games
   useEffect(() => {
     const loadBigGames = async () => {
       try {
         const games = await fetchBigGamesFromSheet();
         setBigGames(games || []);
-      } catch (err) {
-        console.error("Big Games error", err);
+      } catch {
         setBigGames([]);
       }
     };
     loadBigGames();
   }, []);
 
-  // --- Brighter Side (Things We Love)
+  // Brighter Side
   useEffect(() => {
     const loadBrighterSide = async () => {
       try {
         const stories = await fetchThingsWeLoveFromSheet();
         setBrighterSide(stories || []);
-      } catch (err) {
-        console.error("Brighter Side error", err);
+      } catch {
         setBrighterSide([]);
       }
     };
     loadBrighterSide();
   }, []);
 
-  // --- Conversation Deck
+  // Conversation Deck
   useEffect(() => {
     const shuffled = [...conversationDeck].sort(() => Math.random() - 0.5);
     setConversationCards(shuffled.slice(0, 3));
   }, []);
 
-  // --- Pocket Companion
+  // Pocket Companion
   useEffect(() => {
     const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
     setPocketCards([
@@ -190,53 +161,81 @@ useEffect(() => {
 
   return (
     <div className="px-4 sm:px-6 md:px-8 py-10 text-white bg-gradient-to-br from-black via-[#0f172a] to-[#312e81]">
-      {/* TAPInto */}
+      {/* Header */}
+      <header className="text-center mb-10">
+        <h1 className="text-4xl md:text-5xl font-script neon-yellow-glow mb-2">
+          Talk More Tonight
+        </h1>
+        <p className="text-gray-300 italic">Here’s the news for tonight…</p>
+      </header>
+
+      {/* TAPInto Spotlight */}
       {tapintoHeadlines.length > 0 && (
-        <section className="relative rounded-2xl px-6 py-8 bg-[#0b1b34] shadow border border-white/20 max-w-5xl mx-auto my-10">
-          <h3 className="text-2xl font-bold mb-4 text-center">Top Headlines 🗞️</h3>
+        <section className="relative rounded-2xl px-6 py-8 bg-[#0b1b34] shadow border border-white/20 max-w-5xl mx-auto mb-10">
+          <h3 className="text-2xl font-bold mb-4 text-center">🗞️ Top Headlines</h3>
           <TapIntoCard city={city} theme="dark" textColor="text-white" />
         </section>
       )}
 
-      {/* LiveWire */}
+      {/* Tonight’s Headlines */}
       <section className="rounded-2xl px-6 py-8 bg-[#1a2333] shadow max-w-5xl mx-auto mb-10">
         <h3 className="text-2xl font-bold mb-2">📰 Tonight’s Headlines</h3>
         <p className="text-gray-300 mb-6 italic">
           Not every article will be a match — kinda like dating 😉
         </p>
-        {selectedTopics.map((topic) => (
-          <div key={topic} className="mb-6">
-            <h4 className="text-lg font-semibold mb-2">
-              {topicEmojiMap[topic]} {topic}
-            </h4>
-            {liveHeadlines[topic] && liveHeadlines[topic].length > 0 ? (
-              liveHeadlines[topic].slice(0, 3).map((article, i) => (
+        {selectedTopics.map((topic) => {
+          const live = liveHeadlines[topic] || [];
+          const curated = curatedFallbacks[topic] || [];
+          if (live.length === 0 && curated.length === 0) return null;
+
+          return (
+            <div key={topic} className="mb-6">
+              <h4 className="text-lg font-semibold mb-2">
+                {topicEmojiMap[topic]} {topic}
+              </h4>
+              {(live.length > 0 ? live : curated).slice(0, 3).map((article, i) => (
                 <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
-                  <span className="block font-bold">{article.title}</span>
-                  <p className="text-gray-300">{article.description}</p>
+                  <div className="flex items-center space-x-2">
+                    <span
+                      className={`inline-block text-xs px-2 py-0.5 rounded-full ${
+                        article.sourceType === "rss"
+                          ? "bg-blue-900/40 text-blue-400 shadow-[0_0_6px_rgba(59,130,246,0.6)]"
+                          : "bg-green-900/40 text-green-400 shadow-[0_0_6px_rgba(34,197,94,0.6)]"
+                      }`}
+                    >
+                      {article.sourceType === "rss" ? "LIVE" : "CURATED"}
+                    </span>
+                    {article.sourceType === "rss" ? (
+                      <a
+                        href={article.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-bold hover:underline"
+                      >
+                        {article.title}
+                      </a>
+                    ) : (
+                      <span className="font-bold text-gray-300 cursor-default">
+                        {article.title}
+                      </span>
+                    )}
+                  </div>
+                  {article.description && (
+                    <p className="text-gray-300 mt-1">{article.description}</p>
+                  )}
                   <p className="text-xs text-gray-400 mt-1">
                     {article.publishedAt} · {article.source}
                   </p>
                 </div>
-              ))
-            ) : (
-              (curatedFallbacks[topic] || []).slice(0, 3).map((story, i) => (
-                <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
-                  <span className="block font-bold">{story.title}</span>
-                  <p className="text-gray-300">{story.description}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {story.publishedAt} · {story.source}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
       </section>
 
       {/* Hot Sheet */}
       <section className="rounded-2xl px-6 py-8 bg-black shadow max-w-5xl mx-auto mb-10">
-        <h3 className="text-2xl font-bold mb-6">🔥 The Hot Sheet</h3>
+        <h3 className="text-2xl font-bold mb-6 drop-shadow-glow">🔥 The Hot Sheet</h3>
         {Object.keys(hotSheet).length > 0 ? (
           Object.keys(hotSheet).map((subtopic) => (
             <div key={subtopic} className="mb-6">
@@ -251,30 +250,15 @@ useEffect(() => {
             </div>
           ))
         ) : (
-          <div className="bg-[#1a1a1a] p-6 rounded-md text-center text-sm text-gray-300">
-            <p className="mb-2 font-bold">No Hot Sheet picks tonight.</p>
-            <p>
-              👉 Check what’s trending instead on{" "}
-              <a
-                href="https://trends.google.com/trends/trendingsearches/daily?geo=US"
-                target="_blank"
-                rel="noreferrer"
-                className="underline text-blue-400"
-              >
-                Google Trends
-              </a>
-            </p>
-          </div>
+          <p className="text-gray-400 italic">No Hot Sheet picks tonight.</p>
         )}
       </section>
-
-
 
       {/* Sports + Deck + Brighter Side */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">
-          <h3 className="text-xl font-bold mb-4">🏟️ Tonight in Sports</h3>
+          <h3 className="text-xl font-bold neon-yellow-glow mb-4">🏟️ Tonight in Sports</h3>
           <ul className="space-y-2 mb-6">
             {SPORT_KEYS.map((sport) => (
               <li key={sport}>
@@ -353,13 +337,11 @@ useEffect(() => {
       </section>
 
       {/* Footer */}
-      <footer className="mt-10 text-center text-white">
-        <p className="italic mb-2">
-          We truly hope you and {dateName || "your date"} Talk More Tonight.
+      <footer className="mt-10 text-center">
+        <p className="font-script text-2xl drop-shadow-glow italic mb-4">
+          We truly hope you and {dateName || "your date"} Talk More Tonight ✨
         </p>
-        <p className="text-sm text-gray-400 mb-4">
-          © 2025 Talk More Tonight™. All rights reserved.
-        </p>
+        <p className="text-sm text-gray-400">© 2025 Talk More Tonight™. All rights reserved.</p>
         <button
           onClick={() => navigate("/")}
           className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-6 rounded-full shadow hover:scale-105 transition"
