@@ -7,13 +7,11 @@ import { useUser } from "../context/UserContext";
 import TapIntoCard from "../components/TapIntoCard";
 import DateNightFunSection from "../components/DateNightFunSection";
 
-// Sheets + utils
+// Utils
+import getLiveWireHeadlines from "../utils/getLiveWireHeadlines";
 import { fetchHotSheetFromSheet } from "../utils/fetchHotSheetFromSheet";
 import { fetchThingsWeLoveFromSheet } from "../utils/fetchThingsWeLoveFromSheet";
 import { fetchBigGamesFromSheet } from "../utils/fetchBigGamesFromSheet";
-import { getTAPintoHeadlinesForCity } from "../utils/rssFeeds";
-import getLiveWireHeadlines from "../utils/getLiveWireHeadlines";
-import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFromSheet";
 import getTeamsForCity from "../utils/getTeamsForCity";
 
 // Data
@@ -45,19 +43,20 @@ const News = () => {
 
   // State
   const [tapintoHeadlines, setTapintoHeadlines] = useState([]);
-  const [liveHeadlines, setLiveHeadlines] = useState({});
-  const [curatedFallbacks, setCuratedFallbacks] = useState({});
+  const [headlines, setHeadlines] = useState({});
   const [hotSheet, setHotSheet] = useState({});
+  const [expandedHotSheet, setExpandedHotSheet] = useState({});
   const [bigGames, setBigGames] = useState([]);
   const [brighterSide, setBrighterSide] = useState([]);
   const [conversationCards, setConversationCards] = useState([]);
   const [pocketCards, setPocketCards] = useState([]);
 
-  // TAPInto
+  // TAPInto (local news)
   useEffect(() => {
     const loadTAPinto = async () => {
-      if (!city) return;
       try {
+        if (!city) return;
+        const { getTAPintoHeadlinesForCity } = await import("../utils/rssFeeds");
         const headlines = await getTAPintoHeadlinesForCity(city);
         setTapintoHeadlines(headlines || []);
       } catch {
@@ -67,38 +66,24 @@ const News = () => {
     loadTAPinto();
   }, [city]);
 
-  // LiveWire
+  // LiveWire (RSS → API → Curated → Dummy)
   useEffect(() => {
-    const loadLiveWire = async () => {
+    const loadHeadlines = async () => {
       try {
         const localTeams = getTeamsForCity(city) || {};
         const teamsArray = includeDateTeams ? dateTeams : [];
-
-        const headlines = await getLiveWireHeadlines({
+        const allHeadlines = await getLiveWireHeadlines({
           topics: selectedTopics,
-          teams: { ...localTeams, extra: teamsArray },
+          teams: { ...localTeams, extra: teamsArray, city },
         });
-
-        setLiveHeadlines(headlines || {});
-      } catch {
-        setLiveHeadlines({});
+        setHeadlines(allHeadlines || {});
+      } catch (err) {
+        console.error("Headline error:", err);
+        setHeadlines({});
       }
     };
-    loadLiveWire();
+    loadHeadlines();
   }, [city, selectedTopics, includeDateTeams, dateTeams]);
-
-  // Curated fallbacks
-  useEffect(() => {
-    const loadFallbacks = async () => {
-      try {
-        const fb = await fetchCuratedFallbacksFromSheet();
-        setCuratedFallbacks(fb || {});
-      } catch {
-        setCuratedFallbacks({});
-      }
-    };
-    loadFallbacks();
-  }, []);
 
   // Hot Sheet
   useEffect(() => {
@@ -169,7 +154,7 @@ const News = () => {
         <p className="text-gray-300 italic">Here’s the news for tonight…</p>
       </header>
 
-      {/* TAPInto Spotlight */}
+      {/* TAPInto */}
       {tapintoHeadlines.length > 0 && (
         <section className="relative rounded-2xl px-6 py-8 bg-[#0b1b34] shadow border border-white/20 max-w-5xl mx-auto mb-10">
           <h3 className="text-2xl font-bold mb-4 text-center">🗞️ Top Headlines</h3>
@@ -177,35 +162,38 @@ const News = () => {
         </section>
       )}
 
-      {/* Tonight’s Headlines */}
+      {/* Live Headlines */}
       <section className="rounded-2xl px-6 py-8 bg-[#1a2333] shadow max-w-5xl mx-auto mb-10">
         <h3 className="text-2xl font-bold mb-2">📰 Tonight’s Headlines</h3>
         <p className="text-gray-300 mb-6 italic">
           Not every article will be a match — kinda like dating 😉
         </p>
         {selectedTopics.map((topic) => {
-          const live = liveHeadlines[topic] || [];
-          const curated = curatedFallbacks[topic] || [];
-          if (live.length === 0 && curated.length === 0) return null;
+          const articles = headlines[topic] || [];
+          if (articles.length === 0) return null;
 
           return (
             <div key={topic} className="mb-6">
               <h4 className="text-lg font-semibold mb-2">
                 {topicEmojiMap[topic]} {topic}
               </h4>
-              {(live.length > 0 ? live : curated).slice(0, 3).map((article, i) => (
+              {articles.slice(0, 3).map((article, i) => (
                 <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
                   <div className="flex items-center space-x-2">
                     <span
                       className={`inline-block text-xs px-2 py-0.5 rounded-full ${
                         article.sourceType === "rss"
-                          ? "bg-blue-900/40 text-blue-400 shadow-[0_0_6px_rgba(59,130,246,0.6)]"
-                          : "bg-green-900/40 text-green-400 shadow-[0_0_6px_rgba(34,197,94,0.6)]"
+                          ? "bg-blue-900/40 text-blue-400"
+                          : article.sourceType === "api"
+                          ? "bg-green-900/40 text-green-400"
+                          : article.sourceType === "curated"
+                          ? "bg-purple-900/40 text-purple-400"
+                          : "bg-gray-700 text-gray-300"
                       }`}
                     >
-                      {article.sourceType === "rss" ? "LIVE" : "CURATED"}
+                      {article.sourceType?.toUpperCase()}
                     </span>
-                    {article.sourceType === "rss" ? (
+                    {article.link ? (
                       <a
                         href={article.link}
                         target="_blank"
@@ -237,18 +225,36 @@ const News = () => {
       <section className="rounded-2xl px-6 py-8 bg-black shadow max-w-5xl mx-auto mb-10">
         <h3 className="text-2xl font-bold mb-6 drop-shadow-glow">🔥 The Hot Sheet</h3>
         {Object.keys(hotSheet).length > 0 ? (
-          Object.keys(hotSheet).map((subtopic) => (
-            <div key={subtopic} className="mb-6">
-              <h4 className="text-lg font-semibold mb-2">{subtopic}</h4>
-              {hotSheet[subtopic].map((entry, i) => (
-                <div key={i} className="bg-[#1a1a1a] p-4 rounded-md mb-3 shadow text-sm">
-                  <p className="font-bold">{entry.summary}</p>
-                  <p className="text-gray-300">{entry.fact}</p>
-                  <p className="italic text-gray-400">{entry.ask}</p>
-                </div>
-              ))}
-            </div>
-          ))
+          Object.keys(hotSheet).map((subtopic) => {
+            const expanded = expandedHotSheet[subtopic] || false;
+            return (
+              <div key={subtopic} className="mb-6">
+                <button
+                  onClick={() =>
+                    setExpandedHotSheet((prev) => ({
+                      ...prev,
+                      [subtopic]: !prev[subtopic],
+                    }))
+                  }
+                  className="flex items-center justify-between w-full text-left font-semibold text-white bg-[#1a1a1a] px-4 py-2 rounded-md"
+                >
+                  <span>🔥 {subtopic}</span>
+                  <span>{expanded ? "▲" : "▼"}</span>
+                </button>
+                {expanded &&
+                  hotSheet[subtopic].map((entry, i) => (
+                    <div
+                      key={i}
+                      className="bg-[#1a1a1a] p-4 rounded-md mb-3 shadow text-sm mt-2"
+                    >
+                      <p className="font-bold">{entry.summary}</p>
+                      <p className="text-gray-300">{entry.fact}</p>
+                      <p className="italic text-gray-400">{entry.ask}</p>
+                    </div>
+                  ))}
+              </div>
+            );
+          })
         ) : (
           <p className="text-gray-400 italic">No Hot Sheet picks tonight.</p>
         )}
@@ -258,7 +264,9 @@ const News = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">
-          <h3 className="text-xl font-bold neon-yellow-glow mb-4">🏟️ Tonight in Sports</h3>
+          <h3 className="text-xl font-bold text-yellow-300 mb-4 drop-shadow">
+            🏟️ Tonight in Sports
+          </h3>
           <ul className="space-y-2 mb-6">
             {SPORT_KEYS.map((sport) => (
               <li key={sport}>
@@ -277,9 +285,9 @@ const News = () => {
           <div className="space-y-3">
             {bigGames.map((game, i) => (
               <div key={i} className="bg-[#2a2360] p-4 rounded-lg shadow text-sm">
-                <p className="font-bold">{game.title}</p>
-                <p className="text-gray-300">{game.date}</p>
-                <p className="text-gray-400 italic">{game.description}</p>
+                <p className="font-bold">{game.Event}</p>
+                <p className="text-gray-300">{game["Date(s)"]}</p>
+                <p className="text-gray-400 italic">{game.Sport}</p>
               </div>
             ))}
           </div>
@@ -354,3 +362,5 @@ const News = () => {
 };
 
 export default News;
+
+

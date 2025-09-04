@@ -1,20 +1,17 @@
 import rssTopicFeeds from "../data/rssTopicFeeds";
+import { fetchCuratedFallbacksFromSheet } from "./fetchCuratedFallbacksFromSheet";
 
 /**
- * Fetch and parse RSS feed into article objects
- * Uses Netlify proxy to bypass CORS.
+ * Fetch and parse RSS
  */
 async function fetchRSSFeed(url, topic) {
   try {
-    const proxyUrl = `/.netlify/functions/rssProxy?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text = await response.text();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, "text/xml");
 
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, "text/xml");
-
-    const items = [...xml.querySelectorAll("item")].map((item) => ({
+    return [...xml.querySelectorAll("item")].map((item) => ({
       title: item.querySelector("title")?.textContent || "",
       description: item.querySelector("description")?.textContent || "",
       link: item.querySelector("link")?.textContent || "",
@@ -23,8 +20,6 @@ async function fetchRSSFeed(url, topic) {
       topic,
       sourceType: "rss",
     }));
-
-    return items;
   } catch (err) {
     console.error(`[RSS Error] ${url}:`, err);
     return [];
@@ -32,54 +27,82 @@ async function fetchRSSFeed(url, topic) {
 }
 
 /**
- * Helper: filter junk (ads, obits, weird blurbs)
+ * Fetch from NewsData.io (via Netlify proxy!)
  */
-function filterArticles(articles, city, teams) {
-  const badWords = ["obituary", "apply for", "fellowship", "sale", "discount"];
-  const lowerCity = city?.toLowerCase() || "";
+async function fetchNewsDataHeadlines(topic) {
+  const url = `/.netlify/functions/newsdata?q=${encodeURIComponent(topic)}`;
 
-  return articles.filter((a) => {
-    const text = `${a.title} ${a.description}`.toLowerCase();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
 
-    // Skip junk
-    if (badWords.some((w) => text.includes(w))) return false;
-
-    // Skip foreign stuff
-    if (/[а-яА-Я]/.test(text) || /【.+】/.test(text)) return false;
-
-    // Boost location or teams
-    if (lowerCity && text.includes(lowerCity)) return true;
-    if (teams?.some((t) => text.includes(t.toLowerCase()))) return true;
-
-    return true; // fallback: keep
-  });
+    return (data.results || []).map((item) => ({
+      title: item.title,
+      description: item.description || "",
+      link: item.link,
+      publishedAt: item.pubDate,
+      source: item.source_name,
+      topic,
+      sourceType: "api",
+    }));
+  } catch (err) {
+    console.error("[API Error]", err);
+    return [];
+  }
 }
 
 /**
- * Main function: get headlines per topic
+ * Main function: RSS → API → Curated → Dummy
  */
 export default async function getLiveWireHeadlines({
   topics = [],
-  teams = {},
-  maxPerTopic = 3,
+  maxPerTopic = 5,
 }) {
   const results = {};
+  const curated = await fetchCuratedFallbacksFromSheet();
 
   for (const topic of topics) {
-    const feeds = rssTopicFeeds[topic] || [];
     let articles = [];
 
+    // 1. RSS
+    const feeds = rssTopicFeeds[topic] || [];
     for (const url of feeds) {
-      const feedItems = await fetchRSSFeed(url, topic);
-      articles = articles.concat(feedItems);
+      const items = await fetchRSSFeed(url, topic);
+      articles = articles.concat(items);
     }
 
-    // Filter + shuffle
-    let filtered = filterArticles(articles, teams.city, teams.extra || []);
-    filtered = filtered.sort(() => 0.5 - Math.random());
+    // 2. API if RSS empty
+    if (articles.length === 0) {
+      const apiItems = await fetchNewsDataHeadlines(topic);
+      articles = apiItems;
+    }
 
-    // Limit per topic
-    results[topic] = filtered.slice(0, maxPerTopic);
+    // 3. Curated if still empty
+    if (articles.length === 0 && curated[topic]) {
+      articles = curated[topic].map((item) => ({
+        ...item,
+        topic,
+        sourceType: "curated",
+      }));
+    }
+
+    // 4. Dummy last resort
+    if (articles.length === 0) {
+      articles = [
+        {
+          title: `No live news for ${topic}`,
+          description: "",
+          link: "",
+          publishedAt: new Date().toLocaleDateString(),
+          source: "Talk More Tonight",
+          topic,
+          sourceType: "empty",
+        },
+      ];
+    }
+
+    results[topic] = articles.slice(0, maxPerTopic);
   }
 
   return results;
