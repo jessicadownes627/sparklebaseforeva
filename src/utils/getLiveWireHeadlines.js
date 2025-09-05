@@ -1,14 +1,17 @@
+// src/utils/getLiveWireHeadlines.js
 import rssTopicFeeds from "../data/rssTopicFeeds";
 import { fetchCuratedFallbacksFromSheet } from "./fetchCuratedFallbacksFromSheet";
 
 /**
- * Fetch and parse RSS
+ * Fetch and parse RSS through Netlify proxy
  */
 async function fetchRSSFeed(url, topic) {
   try {
-    const res = await fetch(url);
+    const proxyUrl = `/.netlify/functions/rssProxy?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
+
     const xml = new DOMParser().parseFromString(text, "text/xml");
 
     return [...xml.querySelectorAll("item")].map((item) => ({
@@ -18,7 +21,7 @@ async function fetchRSSFeed(url, topic) {
       publishedAt: item.querySelector("pubDate")?.textContent || "",
       source: new URL(url).hostname.replace("www.", ""),
       topic,
-      sourceType: "rss",
+      sourceType: "rss", // will display as LIVE
     }));
   } catch (err) {
     console.error(`[RSS Error] ${url}:`, err);
@@ -27,12 +30,11 @@ async function fetchRSSFeed(url, topic) {
 }
 
 /**
- * Fetch from NewsData.io (via Netlify proxy!)
+ * Fetch from NewsData.io (via Netlify proxy)
  */
 async function fetchNewsDataHeadlines(topic) {
-  const url = `/.netlify/functions/newsdata?q=${encodeURIComponent(topic)}`;
-
   try {
+    const url = `/.netlify/functions/newsdata?q=${encodeURIComponent(topic)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -44,7 +46,7 @@ async function fetchNewsDataHeadlines(topic) {
       publishedAt: item.pubDate,
       source: item.source_name,
       topic,
-      sourceType: "api",
+      sourceType: "api", // will display as LIVE
     }));
   } catch (err) {
     console.error("[API Error]", err);
@@ -94,7 +96,7 @@ export default async function getLiveWireHeadlines({
           title: `No live news for ${topic}`,
           description: "",
           link: "",
-          publishedAt: new Date().toLocaleDateString(),
+          publishedAt: new Date().toISOString(),
           source: "Talk More Tonight",
           topic,
           sourceType: "empty",

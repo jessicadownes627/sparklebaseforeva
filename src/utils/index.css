@@ -88,6 +88,16 @@ body {
     0 0 20px #ffd000,
     0 0 30px #ffcc00;
 }
+/* Neon white text glow */
+.neon-white-glow {
+  color: #ffffff;
+  text-shadow:
+    0 0 5px #ffffff,
+    0 0 10px #ffffff,
+    0 0 15px #e0e0e0,
+    0 0 20px #cccccc,
+    0 0 30px #aaaaaa;
+}
 
 /* Gem tone pastel backgrounds */
 .bg-rose     { background-color: #fde2e4; }

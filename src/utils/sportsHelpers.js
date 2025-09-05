@@ -1,15 +1,44 @@
 // src/utils/sportsHelpers.js
-export const SPORT_KEYS = ["Baseball", "Football", "Basketball", "Hockey"];
 
+// Main sport categories we support
+export const SPORT_KEYS = [
+  "Baseball",
+  "Football",
+  "Basketball",
+  "Hockey",
+  "Golf",
+  "Olympics",
+  "College Sports",
+  "Soccer",
+];
+
+// Emoji mapping for each sport
+export const SPORT_EMOJIS = {
+  Baseball: "⚾",
+  Football: "🏈",
+  Basketball: "🏀",
+  Hockey: "🏒",
+  Golf: "⛳",
+  Olympics: "🏅",
+  "College Sports": "🎓",
+  Soccer: "⚽",
+};
+
+// Normalize sport keys
 export function normalizeSportKey(key) {
   const k = String(key || "").trim().toLowerCase();
   if (["mlb", "baseball"].includes(k)) return "Baseball";
   if (["nfl", "football"].includes(k)) return "Football";
   if (["nba", "basketball"].includes(k)) return "Basketball";
   if (["nhl", "hockey"].includes(k)) return "Hockey";
-  return "Baseball";
+  if (["golf"].includes(k)) return "Golf";
+  if (["olympics"].includes(k)) return "Olympics";
+  if (["college", "ncaa"].includes(k)) return "College Sports";
+  if (["soccer", "mls", "fifa"].includes(k)) return "Soccer";
+  return "Baseball"; // fallback
 }
 
+// Teams by sport (pro-level)
 const LEAGUE_TEAMS = {
   Baseball: [
     "Arizona Diamondbacks","Atlanta Braves","Baltimore Orioles","Boston Red Sox",
@@ -48,6 +77,10 @@ const LEAGUE_TEAMS = {
     "St. Louis Blues","Tampa Bay Lightning","Toronto Maple Leafs","Vancouver Canucks","Vegas Golden Knights",
     "Washington Capitals","Winnipeg Jets"
   ],
+  Golf: [], // leave empty (individual players)
+  Olympics: [], // generic placeholder
+  "College Sports": [], // NCAA
+  Soccer: [], // MLS/International
 };
 
 export function getAllTeamsForSport(sport) {
@@ -55,7 +88,7 @@ export function getAllTeamsForSport(sport) {
   return (LEAGUE_TEAMS[key] || []).slice();
 }
 
-// Minimal state → local teams (expand later as needed)
+// Minimal state map → local teams
 const STATE_TEAM_MAP = {
   NY: {
     Baseball: ["New York Mets","New York Yankees"],
@@ -75,7 +108,6 @@ const STATE_TEAM_MAP = {
     Basketball: ["Dallas Mavericks","Houston Rockets","San Antonio Spurs"],
     Hockey: ["Dallas Stars"],
   },
-  // add states you care about first; safe fallback covers the rest
 };
 
 export function getTeamsForStateAndSport(stateAbbr, sport) {
@@ -89,6 +121,10 @@ export function getTeamsForStateAndSport(stateAbbr, sport) {
     Football: ["Dallas Cowboys","Kansas City Chiefs","San Francisco 49ers"],
     Basketball: ["Boston Celtics","Los Angeles Lakers","Golden State Warriors"],
     Hockey: ["New York Rangers","Toronto Maple Leafs","Vegas Golden Knights"],
+    Golf: [],
+    Olympics: [],
+    "College Sports": [],
+    Soccer: [],
   };
   return defaults[key].slice();
 }
