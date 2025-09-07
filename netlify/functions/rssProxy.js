@@ -1,35 +1,27 @@
-import fetch from "node-fetch";
-
+// netlify/functions/rssProxy.js
 export async function handler(event) {
-  const url = event.queryStringParameters.url;
-  if (!url) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Missing url parameter" }),
-    };
-  }
-
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
+    const url = event.queryStringParameters.url;
+    if (!url) {
+      return { statusCode: 400, body: "Missing URL parameter" };
     }
-    const text = await response.text();
+
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`RSS fetch error: ${res.status}`);
+    }
+    const text = await res.text();
 
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/xml; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: { "Content-Type": "application/xml" },
       body: text,
     };
-  } catch (error) {
-    console.error("rssProxy error:", error);
+  } catch (err) {
+    console.error("Proxy error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: `Error: ${err.message}`,
     };
   }
 }
-

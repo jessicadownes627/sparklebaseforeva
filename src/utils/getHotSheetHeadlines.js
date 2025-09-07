@@ -1,83 +1,84 @@
 // src/utils/getHotSheetHeadlines.js
-import rssTopicFeeds from "../data/rssTopicFeeds";
+import subtopicFeeds from "../data/rssSubtopicFeeds";
 import { fetchHotSheetFromSheet } from "./fetchHotSheetFromSheet";
 
-/**
- * Fetch and parse RSS feed into article objects
- */
+// Helper: RSS fetch via Netlify proxy
 async function fetchRSSFeed(url, subtopic) {
   try {
-    const response = await fetch(
-      `/api/rssProxy?url=${encodeURIComponent(url)}`
-    ); // use your Netlify proxy
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text = await response.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, "text/xml");
+    const proxyUrl = `/.netlify/functions/rssProxy?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, "text/xml");
 
-    const items = [...xml.querySelectorAll("item")].map((item) => ({
+    return [...xml.querySelectorAll("item")].map((item) => ({
       title: item.querySelector("title")?.textContent || "",
       description: item.querySelector("description")?.textContent || "",
       link: item.querySelector("link")?.textContent || "",
-      publishedAt: item.querySelector("pubDate")?.textContent || "",
+      publishedAt:
+        item.querySelector("pubDate")?.textContent || new Date().toISOString(),
       source: new URL(url).hostname.replace("www.", ""),
       subtopic,
       sourceType: "rss",
     }));
-
-    return items;
   } catch (err) {
-    console.error(`[RSS Error HotSheet] ${url}:`, err);
+    console.error(`[RSS Error] ${url}:`, err);
     return [];
   }
 }
 
-/**
- * Main function: build Hot Sheet entries
- */
-export default async function getHotSheetHeadlines({
-  subtopicAnswers = [],
-  dateName = "your date",
-  city = "",
-  teams = [],
-}) {
+// Main merge function
+export async function getHotSheetHeadlines({ subtopics = [], maxPerSubtopic = 3 }) {
   const results = {};
   const sheetData = await fetchHotSheetFromSheet();
 
-  for (const subtopic of subtopicAnswers) {
-    let entries = [];
+  for (const subtopic of subtopics) {
+    const fromSheet = sheetData[subtopic] || [];
+    let mergedArticles = [];
 
-    // Try RSS feeds first
-    const topicFeeds = rssTopicFeeds[subtopic] || [];
-    for (const url of topicFeeds) {
-      const feedItems = await fetchRSSFeed(url, subtopic);
-      if (feedItems.length > 0) {
-        entries = feedItems.map((item) => ({
-          ...item,
-          ask: sheetData[subtopic]?.[0]?.ask?.replace(
-            "[dateName]",
-            dateName
-          ),
-        }));
-        break; // only need one live source
+    // Try RSS first
+    const feeds = subtopicFeeds[subtopic] || [];
+    let rssHeadline = null;
+    for (const url of feeds) {
+      const rssItems = await fetchRSSFeed(url, subtopic);
+      if (rssItems.length) {
+        rssHeadline = rssItems[0]; // grab first/latest headline
+        break;
       }
     }
 
-    // Fall back to curated if no live results
-    if (entries.length === 0 && sheetData[subtopic]) {
-      entries = sheetData[subtopic].map((row) => ({
-        title: row.summary,
-        description: row.fact,
-        ask: row.ask?.replace("[dateName]", dateName),
-        publishedAt: row.publishedAt || "Curated",
-        source: "Talk More Tonight",
-        sourceType: "curated",
+    // Build entries with RSS headline + sheet fact/ask
+    if (fromSheet.length > 0) {
+      mergedArticles = fromSheet.map((entry, i) => ({
+        title: rssHeadline?.title || entry.title || subtopic,
+        description: entry.fact || "",
+        ask: entry.ask || "",
+        link: rssHeadline?.link || "",
+        publishedAt: rssHeadline?.publishedAt || new Date().toISOString(),
+        source: rssHeadline?.source || "Hot Sheet",
+        subtopic,
+        sourceType: rssHeadline ? "rss+sheet" : "sheet",
       }));
     }
 
-    if (entries.length > 0) results[subtopic] = entries;
+    // If nothing at all, fallback dummy
+    if (!mergedArticles.length) {
+      mergedArticles = [
+        {
+          title: `No Hot Sheet available for ${subtopic}`,
+          description: "",
+          ask: "",
+          link: "",
+          publishedAt: new Date().toISOString(),
+          source: "Talk More Tonight",
+          subtopic,
+          sourceType: "empty",
+        },
+      ];
+    }
+
+    results[subtopic] = mergedArticles.slice(0, maxPerSubtopic);
   }
 
   return results;
 }
-

@@ -8,16 +8,9 @@ import subtopicOptions from "../data/subtopicOptions";
 import { AnimatePresence, motion } from "framer-motion";
 import cityTeamMap from "../data/cityTeamMap";
 
-// 🔧 NEW: use canonical sport helpers (fixes Baseball/MLB key mismatches)
-import {
-  SPORT_KEYS,
-  normalizeSportKey,
-  getAllTeamsForSport,
-} from "../utils/sportsHelpers";
+import { normalizeSportKey, getAllTeamsForSport } from "../utils/sportsHelpers";
 
-// ⛔️ REMOVED: leagueTeams import (we now pull from helpers)
-// import leagueTeams from "../data/leagueTeams";
-
+// -------------------- Topic Groups --------------------
 const topicGroups = {
   "🧠 Smart & Curious": [
     "Politics 🗳️", "Talk of the Country 🇺🇸", "Tech & Gadgets 💻", "Business & Money 💼",
@@ -41,13 +34,13 @@ const topicGroups = {
   ]
 };
 
-// Helpers
+// -------------------- Helpers --------------------
 const stripEmoji = (s = "") =>
-  String(s)
-    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDEFF])/g, "")
-    .trim();
+  String(s).replace(
+    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDEFF])/g,
+    ""
+  ).trim();
 
-  // Make a topic like "Baseball ⚾" or "Baseball (MLB)" → "baseball"
 const sportTopicToKey = (topic = "") => {
   const s = stripEmoji(topic).toLowerCase();
   if (s.includes("baseball")) return "baseball";
@@ -57,18 +50,14 @@ const sportTopicToKey = (topic = "") => {
   return "";
 };
 
-
-// Canonical sport names (lowercased) we care about for favorites UI
-const SPORTS_TOPICS_LOWER = new Set(["football", "basketball", "baseball", "hockey"]);
-
 const STATE_TO_CODE = {
-  "new jersey": "NJ", "nj": "NJ",
-  "new york": "NY", "ny": "NY",
-  "pennsylvania": "PA", "pa": "PA",
-  "florida": "FL", "fl": "FL",
-  "california": "CA", "ca": "CA",
-  "texas": "TX", "tx": "TX",
-  "illinois": "IL", "il": "IL",
+  "new jersey": "NJ", nj: "NJ",
+  "new york": "NY", ny: "NY",
+  pennsylvania: "PA", pa: "PA",
+  florida: "FL", fl: "FL",
+  california: "CA", ca: "CA",
+  texas: "TX", tx: "TX",
+  illinois: "IL", il: "IL",
 };
 
 const STATE_TEAM_SUGGESTIONS = {
@@ -118,10 +107,10 @@ const getStateCode = (raw = "") => {
   const s = String(raw || "").trim();
   const parts = s.split(",").map(p => p.trim());
   if (parts.length === 2 && /^[A-Za-z]{2}$/.test(parts[1])) return parts[1].toUpperCase();
-  const key = s.toLowerCase();
-  return STATE_TO_CODE[key] || "";
+  return STATE_TO_CODE[s.toLowerCase()] || "";
 };
 
+// -------------------- Component --------------------
 const Topics = () => {
   const navigate = useNavigate();
   const { userData, setUserData } = useUser();
@@ -134,35 +123,29 @@ const Topics = () => {
 
   const theme = energyThemes[energy];
 
-  // Topic selection
+  // State
   const [selectedTopics, setSelectedTopics] = useState(userData.selectedTopics || []);
   const [openGroups, setOpenGroups] = useState([]);
   const [showLimitMessage, setShowLimitMessage] = useState(false);
   const [shake, setShake] = useState(false);
-
-  // Partner-team toggle
   const [includeDateTeams, setIncludeDateTeams] = useState(userData.includeDateTeams || false);
-
-  // Store favorites as array of objects: [{ sport: 'football', team: 'Dallas Cowboys' }, ...]
   const [dateTeams, setDateTeams] = useState(userData.dateTeams || []);
 
-// Show partner-team section only if a pro sport is selected
-const hasSportsSelected = useMemo(() => {
-  return (selectedTopics || []).some(t => !!sportTopicToKey(t));
-}, [selectedTopics]);
+  // Derived values
+  const hasSportsSelected = useMemo(
+    () => (selectedTopics || []).some(t => !!sportTopicToKey(t)),
+    [selectedTopics]
+  );
 
+  const selectedSportsSet = useMemo(() => {
+    const set = new Set();
+    (selectedTopics || []).forEach(t => {
+      const key = sportTopicToKey(t);
+      if (key) set.add(key);
+    });
+    return set;
+  }, [selectedTopics]);
 
-// Which sports are selected (normalized to lower)
-const selectedSportsSet = useMemo(() => {
-  const set = new Set();
-  (selectedTopics || []).forEach(t => {
-    const key = sportTopicToKey(t); // "baseball" | "football" | ...
-    if (key) set.add(key);
-  });
-  return set;
-}, [selectedTopics]);
-
-  // City → sport → teams
   const lowerCityTeamIndex = useMemo(() => {
     const out = {};
     Object.keys(cityTeamMap || {}).forEach(k => (out[k.toLowerCase()] = cityTeamMap[k]));
@@ -179,7 +162,6 @@ const selectedSportsSet = useMemo(() => {
            null;
   }, [lowerCityTeamIndex, cityKeyLower, cityOnlyLower]);
 
-  // Suggestions (city-first, then state fallback)
   const cityTeamSuggestions = useMemo(() => {
     if (!cityTeamsObj) return [];
     const out = [];
@@ -202,10 +184,9 @@ const selectedSportsSet = useMemo(() => {
     ? cityTeamSuggestions
     : fallbackStateSuggestions;
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
+  // -------------------- Handlers --------------------
   const toggleTopic = (topic) => {
     if (selectedTopics.includes(topic)) {
       setSelectedTopics(prev => prev.filter(t => t !== topic));
@@ -235,7 +216,6 @@ const selectedSportsSet = useMemo(() => {
     setOpenGroups([]);
     setIncludeDateTeams(false);
     setDateTeams([]);
-
     setUserData({
       ...userData,
       selectedTopics: [],
@@ -245,7 +225,6 @@ const selectedSportsSet = useMemo(() => {
     });
   };
 
-  // util for array-of-objects dateTeams [{sport,team}] → check by sport key
   const getTeamFor = (sportLower) =>
     dateTeams.find((t) => (t?.sport || "").toLowerCase() === sportLower)?.team || "";
 
@@ -258,8 +237,6 @@ const selectedSportsSet = useMemo(() => {
 
   const handleSubmit = () => {
     if (selectedTopics.length === 0) return;
-
-    // Save *everything* to context
     setUserData({
       ...userData,
       selectedTopics,
@@ -267,10 +244,10 @@ const selectedSportsSet = useMemo(() => {
       includeDateTeams,
       dateTeams,
     });
-
     navigate("/tonightstalktips");
   };
 
+  // -------------------- Render --------------------
   return (
     <div className={`min-h-screen ${theme.bg} text-[#0a2540] px-4 py-8`}>
       <PageHeader />
@@ -296,6 +273,7 @@ const selectedSportsSet = useMemo(() => {
         </p>
       )}
 
+      {/* Topic groups */}
       <div className={`space-y-4 mb-10 ${shake ? "animate-shake" : ""}`}>
         {Object.entries(topicGroups).map(([group, topics]) => (
           <div key={group} className="border border-[#0a2540]/20 rounded-xl bg-white/60">
@@ -357,7 +335,7 @@ const selectedSportsSet = useMemo(() => {
 
           {includeDateTeams && (
             <div className="mt-4 space-y-4">
-              {/* Football dropdown (NFL) */}
+              {/* Football dropdown */}
               {selectedSportsSet.has("football") && (
                 <div>
                   <label className="block text-xs font-semibold text-emerald-700 mb-1">
@@ -376,7 +354,7 @@ const selectedSportsSet = useMemo(() => {
                 </div>
               )}
 
-              {/* Basketball dropdown (NBA) */}
+              {/* Basketball dropdown */}
               {selectedSportsSet.has("basketball") && (
                 <div>
                   <label className="block text-xs font-semibold text-emerald-700 mb-1">
@@ -395,7 +373,7 @@ const selectedSportsSet = useMemo(() => {
                 </div>
               )}
 
-              {/* Baseball dropdown (MLB) */}
+              {/* Baseball dropdown */}
               {selectedSportsSet.has("baseball") && (
                 <div>
                   <label className="block text-xs font-semibold text-emerald-700 mb-1">
@@ -414,7 +392,7 @@ const selectedSportsSet = useMemo(() => {
                 </div>
               )}
 
-              {/* Hockey dropdown (NHL) */}
+              {/* Hockey dropdown */}
               {selectedSportsSet.has("hockey") && (
                 <div>
                   <label className="block text-xs font-semibold text-emerald-700 mb-1">
@@ -437,7 +415,7 @@ const selectedSportsSet = useMemo(() => {
         </div>
       )}
 
-      {/* (Optional) Quick chips from local/state suggestions to inspire picks */}
+      {/* Local team suggestions */}
       {hasSportsSelected && teamSuggestions.length > 0 && (
         <div className="mb-8">
           <p className="text-xs uppercase tracking-wide text-emerald-900/70 mb-2">
@@ -452,8 +430,6 @@ const selectedSportsSet = useMemo(() => {
                 <button
                   key={t}
                   onClick={() => {
-                    // If any sport selected, add as that sport’s favorite only if empty;
-                    // otherwise just add a generic entry. Keeps UX snappy.
                     const firstSport = [...selectedSportsSet][0] || "football";
                     setTeamFor(firstSport, t);
                   }}
