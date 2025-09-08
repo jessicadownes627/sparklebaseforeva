@@ -13,8 +13,8 @@ import { fetchThingsWeLoveFromSheet } from "../utils/fetchThingsWeLoveFromSheet"
 import { fetchBigGamesFromSheet } from "../utils/fetchBigGamesFromSheet";
 import { getTAPintoHeadlinesForCity } from "../utils/rssFeeds";
 import { getLiveWireHeadlines } from "../utils/getLiveWireHeadlines";
-import { fetchCuratedFallbacksFromSheet } from "../utils/fetchCuratedFallbacksFromSheet";
 import getTeamsForCity from "../utils/getTeamsForCity";
+import { getHotSheetHeadlines } from "../utils/getHotSheetHeadlines";
 
 // Data
 import topicEmojiMap from "../data/topicEmojiMap";
@@ -46,7 +46,6 @@ const News = () => {
   // State
   const [tapintoHeadlines, setTapintoHeadlines] = useState([]);
   const [liveHeadlines, setLiveHeadlines] = useState({});
-  const [curatedFallbacks, setCuratedFallbacks] = useState({});
   const [hotSheet, setHotSheet] = useState({});
   const [bigGames, setBigGames] = useState([]);
   const [brighterSide, setBrighterSide] = useState([]);
@@ -87,35 +86,27 @@ const News = () => {
     loadLiveWire();
   }, [city, selectedTopics, includeDateTeams, dateTeams]);
 
-  // Curated Fallbacks (for LiveWire only)
-  useEffect(() => {
-    const loadFallbacks = async () => {
-      try {
-        const fb = await fetchCuratedFallbacksFromSheet();
-        setCuratedFallbacks(fb || {});
-      } catch {
-        setCuratedFallbacks({});
-      }
-    };
-    loadFallbacks();
-  }, []);
+// Hot Sheet: subtopics
+useEffect(() => {
+  const loadHotSheet = async () => {
+    try {
+      // Flatten subtopic answers into a single list
+      const subs = Object.values(subtopicAnswers).flat();
 
-  // Hot Sheet (always from your Google Sheet)
-  useEffect(() => {
-    const loadHotSheet = async () => {
-      try {
-        const sheetData = await fetchHotSheetFromSheet();
-        const filtered = {};
-        subtopicAnswers.forEach((sub) => {
-          if (sheetData[sub]) filtered[sub] = sheetData[sub];
-        });
-        setHotSheet(filtered);
-      } catch {
-        setHotSheet({});
-      }
-    };
-    loadHotSheet();
-  }, [subtopicAnswers]);
+      // Get headlines (RSS + Ask + fallback)
+      const headlines = await getHotSheetHeadlines({ subtopics: subs });
+
+      console.log("🔥 Hot Sheet results:", headlines);
+      setHotSheet(headlines || {});
+    } catch (err) {
+      console.error("Error loading Hot Sheet:", err);
+      setHotSheet({});
+    }
+  };
+  loadHotSheet();
+}, [subtopicAnswers]);
+
+
 
   // Big Games
   useEffect(() => {
@@ -163,9 +154,10 @@ const News = () => {
     <div className="px-4 sm:px-6 md:px-8 py-10 text-white bg-gradient-to-br from-black via-[#0f172a] to-[#312e81]">
       {/* Header */}
       <header className="text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-script neon-yellow-glow mb-2">
-          Talk More Tonight
-        </h1>
+       <h1 className="text-4xl md:text-5xl font-script text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] mb-2">
+  Talk More Tonight
+</h1>
+
         <p className="text-gray-300 italic">Here’s the news for tonight…</p>
       </header>
 
@@ -177,7 +169,7 @@ const News = () => {
         </section>
       )}
 
-      {/* Tonight’s Headlines (Live first, Curated fallback) */}
+      {/* Tonight’s Headlines (LiveWire) */}
       <section className="rounded-2xl px-6 py-8 bg-[#1a2333] shadow max-w-5xl mx-auto mb-10">
         <h3 className="text-2xl font-bold mb-2">📰 Tonight’s Headlines</h3>
         <p className="text-gray-300 mb-6 italic">
@@ -185,35 +177,33 @@ const News = () => {
         </p>
         {selectedTopics.map((topic) => {
           const live = liveHeadlines[topic] || [];
-          const curated = curatedFallbacks[topic] || [];
-          if (live.length === 0 && curated.length === 0) return null;
+          if (!live.length) return null;
 
           return (
             <div key={topic} className="mb-6">
               <h4 className="text-lg font-semibold mb-2">
                 {topicEmojiMap[topic]} {topic}
               </h4>
-              {(live.length > 0 ? live : curated).slice(0, 3).map((article, i) => (
-                <div key={i} className="bg-[#0d1423] p-3 rounded-md mb-3 shadow-sm text-sm">
-                  {article.link ? (
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-bold hover:underline block mb-1"
-                    >
-                      {article.title}
-                    </a>
-                  ) : (
-                    <span className="font-bold block mb-1">{article.title}</span>
-                  )}
+              {live.slice(0, 3).map((article, i) => (
+                <div
+                  key={i}
+                  className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm"
+                >
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold hover:underline"
+                  >
+                    {article.title}
+                  </a>
                   {article.description && (
-                    <p className="text-gray-400 text-xs">
-                      {article.description.split(". ")[0]}.
+                    <p className="text-gray-300 text-sm mt-1">
+                      {article.description}
                     </p>
                   )}
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {article.source} · {article.publishedAt?.slice(0, 10)}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {article.publishedAt} · {article.source}
                   </p>
                 </div>
               ))}
@@ -222,42 +212,39 @@ const News = () => {
         })}
       </section>
 
-      {/* 🔥 Hot Sheet (from your Sheet + RSS merge) */}
+
+
+{/* Hot Sheet */}
 <section className="rounded-2xl px-6 py-8 bg-black shadow max-w-5xl mx-auto mb-10">
   <h3 className="text-2xl font-bold mb-6 drop-shadow-glow">🔥 The Hot Sheet</h3>
-
   {Object.keys(hotSheet).length > 0 ? (
     Object.keys(hotSheet).map((subtopic) => (
       <div key={subtopic} className="mb-6">
         <h4 className="text-lg font-semibold mb-2">{subtopic}</h4>
-
         {hotSheet[subtopic].map((entry, i) => (
-          <div
-            key={i}
-            className="bg-[#1a1a1a] p-3 rounded-md mb-3 shadow-sm text-sm"
-          >
+          <div key={i} className="bg-[#1a1a1a] p-4 rounded-md mb-3 shadow text-sm">
             {/* Headline */}
             {entry.link ? (
               <a
                 href={entry.link}
                 target="_blank"
                 rel="noreferrer"
-                className="font-bold hover:underline block mb-1"
+                className="font-bold hover:underline block"
               >
                 {entry.title}
               </a>
             ) : (
-              <span className="font-bold block mb-1">{entry.title}</span>
+              <span className="font-bold">{entry.title}</span>
             )}
 
-            {/* Fact */}
+            {/* Description if available */}
             {entry.description && (
-              <p className="text-gray-300 text-xs mb-1">• {entry.description}</p>
+              <p className="text-gray-300 mt-1">{entry.description}</p>
             )}
 
-            {/* Ask */}
+            {/* Conversation Ask (always show if present) */}
             {entry.ask && (
-              <p className="italic text-gray-400 text-xs">{entry.ask}</p>
+              <p className="italic text-gray-400 mt-2">{entry.ask}</p>
             )}
           </div>
         ))}
@@ -269,11 +256,15 @@ const News = () => {
 </section>
 
 
+
+
+
+
       {/* Sports + Deck + Brighter Side */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">
-          <h3 className="text-xl font-bold neon-yellow-glow mb-4">🏟️ Tonight in Sports</h3>
+         <h3 className="text-xl font-bold text-white mb-4">🏟️ Tonight in Sports</h3>
           <ul className="space-y-2 mb-6">
             {SPORT_KEYS.map((sport) => (
               <li key={sport}>
@@ -291,7 +282,10 @@ const News = () => {
           <h4 className="text-lg font-semibold mb-4">🏆 Big Games Ahead</h4>
           <div className="space-y-3">
             {bigGames.map((game, i) => (
-              <div key={i} className="bg-[#2a2360] p-4 rounded-lg shadow text-sm">
+              <div
+                key={i}
+                className="bg-[#2a2360] p-4 rounded-lg shadow text-sm"
+              >
                 <p className="font-bold">{game.title}</p>
                 <p className="text-gray-300">{game.date}</p>
                 <p className="text-gray-400 italic">{game.description}</p>
@@ -305,7 +299,10 @@ const News = () => {
           <h3 className="text-xl font-bold mb-4">💬 Conversation Deck</h3>
           <div className="space-y-3">
             {conversationCards.map((card, i) => (
-              <div key={i} className="bg-[#1a1a1a] p-4 rounded-lg shadow text-sm">
+              <div
+                key={i}
+                className="bg-[#1a1a1a] p-4 rounded-lg shadow text-sm"
+              >
                 {card.prompt}
               </div>
             ))}
@@ -327,7 +324,12 @@ const News = () => {
           <ul className="space-y-2">
             {brighterSide.map((story, i) => (
               <li key={i}>
-                <a href={story.url} target="_blank" rel="noreferrer" className="underline">
+                <a
+                  href={story.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
                   {story.title}
                 </a>
               </li>
@@ -344,7 +346,10 @@ const News = () => {
         <h3 className="text-xl font-bold mb-4">🌙 Your Pocket Companion</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {pocketCards.map((card, i) => (
-            <div key={i} className="bg-black text-white p-4 rounded-xl shadow">
+            <div
+              key={i}
+              className="bg-black text-white p-4 rounded-xl shadow"
+            >
               {card}
             </div>
           ))}
@@ -356,7 +361,9 @@ const News = () => {
         <p className="font-script text-2xl drop-shadow-glow italic mb-4">
           We truly hope you and {dateName || "your date"} Talk More Tonight ✨
         </p>
-        <p className="text-sm text-gray-400">© 2025 Talk More Tonight™. All rights reserved.</p>
+        <p className="text-sm text-gray-400">
+          © 2025 Talk More Tonight™. All rights reserved.
+        </p>
         <button
           onClick={() => navigate("/")}
           className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-2 px-6 rounded-full shadow hover:scale-105 transition"

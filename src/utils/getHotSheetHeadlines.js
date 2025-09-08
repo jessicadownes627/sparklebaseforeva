@@ -1,8 +1,8 @@
-// src/utils/getHotSheetHeadlines.js
+// utils/getHotSheetHeadlines.js
 import subtopicFeeds from "../data/rssSubtopicFeeds";
 import { fetchHotSheetFromSheet } from "./fetchHotSheetFromSheet";
 
-// Helper: RSS fetch via Netlify proxy
+// Reuse RSS fetcher
 async function fetchRSSFeed(url, subtopic) {
   try {
     const proxyUrl = `/.netlify/functions/rssProxy?url=${encodeURIComponent(url)}`;
@@ -27,57 +27,73 @@ async function fetchRSSFeed(url, subtopic) {
   }
 }
 
-// Main merge function
+// Main function: RSS → Sheet
 export async function getHotSheetHeadlines({ subtopics = [], maxPerSubtopic = 3 }) {
   const results = {};
   const sheetData = await fetchHotSheetFromSheet();
 
-  for (const subtopic of subtopics) {
-    const fromSheet = sheetData[subtopic] || [];
-    let mergedArticles = [];
+  console.log("🔥 Requested subtopics:", subtopics);
+  console.log("🔥 Sheet data sample:", sheetData.slice(0, 5));
 
-    // Try RSS first
+  for (const subtopic of subtopics) {
+    let articles = [];
+
+    // 1. Try RSS
     const feeds = subtopicFeeds[subtopic] || [];
-    let rssHeadline = null;
     for (const url of feeds) {
       const rssItems = await fetchRSSFeed(url, subtopic);
       if (rssItems.length) {
-        rssHeadline = rssItems[0]; // grab first/latest headline
+        articles = rssItems;
         break;
       }
     }
 
-    // Build entries with RSS headline + sheet fact/ask
-    if (fromSheet.length > 0) {
-      mergedArticles = fromSheet.map((entry, i) => ({
-        title: rssHeadline?.title || entry.title || subtopic,
-        description: entry.fact || "",
-        ask: entry.ask || "",
-        link: rssHeadline?.link || "",
-        publishedAt: rssHeadline?.publishedAt || new Date().toISOString(),
-        source: rssHeadline?.source || "Hot Sheet",
-        subtopic,
-        sourceType: rssHeadline ? "rss+sheet" : "sheet",
-      }));
-    }
+    // 2. Always enrich with Ask from Google Sheet
+    const sheetRow = sheetData.find(
+      (row) =>
+        row.subtopic?.toLowerCase().trim() === subtopic?.toLowerCase().trim()
+    );
 
-    // If nothing at all, fallback dummy
-    if (!mergedArticles.length) {
-      mergedArticles = [
+    const askText =
+      sheetRow?.ask || `Ask [dateName] what they think about ${subtopic}`;
+
+    if (articles.length > 0) {
+      // Add the "ask" from sheet to each RSS article
+      articles = articles.map((article) => ({
+        ...article,
+        ask: askText,
+      }));
+    } else if (sheetRow) {
+      // Fallback entirely to sheet (blurb + ask)
+      articles = [
         {
-          title: `No Hot Sheet available for ${subtopic}`,
+          title: sheetRow.blurb || `No news available for ${subtopic}`,
+          description: sheetRow.blurb || "",
+          link: "",
+          publishedAt: new Date().toISOString(),
+          source: "Talk More Tonight",
+          subtopic,
+          sourceType: "sheet",
+          ask: askText,
+        },
+      ];
+    } else {
+      // Absolute last resort dummy (still attach Ask)
+      articles = [
+        {
+          title: `No news available for ${subtopic}`,
           description: "",
-          ask: "",
           link: "",
           publishedAt: new Date().toISOString(),
           source: "Talk More Tonight",
           subtopic,
           sourceType: "empty",
+          ask: askText,
         },
       ];
     }
 
-    results[subtopic] = mergedArticles.slice(0, maxPerSubtopic);
+    results[subtopic] = articles.slice(0, maxPerSubtopic);
   }
 
   return results;

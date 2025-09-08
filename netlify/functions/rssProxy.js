@@ -1,16 +1,21 @@
 // netlify/functions/rssProxy.js
 export async function handler(event) {
   try {
-    const url = event.queryStringParameters.url;
+    const { url } = event.queryStringParameters || {};
     if (!url) {
-      return { statusCode: 400, body: "Missing URL parameter" };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing RSS feed URL" }),
+      };
     }
 
+    console.log("🌐 Fetching RSS feed:", url);
+
     const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`RSS fetch error: ${res.status}`);
-    }
     const text = await res.text();
+
+    // Debug first part of RSS
+    console.log("📥 Raw RSS response (truncated):", text.slice(0, 200));
 
     return {
       statusCode: 200,
@@ -18,10 +23,10 @@ export async function handler(event) {
       body: text,
     };
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error("❌ RSS Proxy function error:", err);
     return {
       statusCode: 500,
-      body: `Error: ${err.message}`,
+      body: JSON.stringify({ error: err.message }),
     };
   }
 }
