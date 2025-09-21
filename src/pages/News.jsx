@@ -65,6 +65,20 @@ const dedupeAndTrim = (articles, max = 3, seenTitles = new Set()) => {
   return unique.slice(0, max);
 };
 
+// Custom date formatter for Big Games
+const formatDateRange = (d) => {
+  if (!d) return "";
+  if (/\d{4}-\d{2}-\d{2}T/.test(d)) {
+    // ISO timestamp → make readable
+    return new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  return d; // already a nice range like "Aug 1–Sept 1, 2025"
+};
+
 const News = () => {
   const navigate = useNavigate();
   const { userData } = useUser();
@@ -173,6 +187,13 @@ const News = () => {
       getRandom(pocketCompanionDeck.finalThought),
     ]);
   }, []);
+
+  // Sort Big Games chronologically
+  const sortedBigGames = [...bigGames].sort((a, b) => {
+    const da = new Date(a.date || a["Date(s)"]);
+    const db = new Date(b.date || b["Date(s)"]);
+    return da - db;
+  });
 
   return (
     <div className="px-4 sm:px-6 md:px-8 py-10 text-white bg-gradient-to-br from-black via-[#0f172a] to-[#312e81]">
@@ -311,26 +332,40 @@ const News = () => {
 
       {/* Sports + Deck + Brighter Side */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
+
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">
           <h3 className="text-xl font-bold mb-4">🏟️ Tonight in Sports</h3>
           <ul className="space-y-2 mb-6">
-            {Object.keys(ESPN_SCHEDULES).map((s) => (
-              <li key={s}>
-                <a href={ESPN_SCHEDULES[s]} target="_blank" rel="noreferrer" className="underline hover:text-blue-400">
-                  {s} Schedule →
-                </a>
-              </li>
-            ))}
+            <li><a href="https://www.espn.com/mlb/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">⚾ Baseball Schedule →</a></li>
+            <li><a href="https://www.espn.com/nfl/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏈 Football Schedule →</a></li>
+            <li><a href="https://www.espn.com/nba/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏀 Basketball Schedule →</a></li>
+            <li><a href="https://www.espn.com/nhl/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏒 Hockey Schedule →</a></li>
           </ul>
+
           <h4 className="text-lg font-semibold mb-4">🏆 Big Games Ahead</h4>
           <div className="space-y-3">
-            {bigGames.slice(0, 4).map((g, i) => (
+            {sortedBigGames.slice(0, 4).map((g, i) => (
               <div key={i} className="bg-[#2a2360] p-4 rounded-lg text-sm">
-                {g.sport && <p className="font-semibold text-indigo-200 mb-1">{g.sport}</p>}
-                <p className="font-bold">{g.Event || g.title}</p>
-                <p className="text-gray-300">{formatDate(g.date)}</p>
-                {g.description && <p className="text-gray-400 italic">{g.description}</p>}
+                {g.Sport && (
+                  <p className="font-semibold text-indigo-200 mb-1">
+                    {g.Sport === "Football" && "🏈 "}
+                    {g.Sport === "Baseball" && "⚾ "}
+                    {g.Sport === "Basketball" && "🏀 "}
+                    {g.Sport === "Hockey" && "🏒 "}
+                    {g.Sport === "Soccer" && "⚽ "}
+                    {g.Sport === "Tennis" && "🎾 "}
+                    {g.Sport === "Golf" && "⛳ "}
+                    {g.Sport}
+                  </p>
+                )}
+                <p className="font-bold">{g.Event}</p>
+                {(g["Date(s)"] || g.date) && (
+                  <p className="text-gray-300">{formatDateRange(g["Date(s)"] || g.date)}</p>
+                )}
+                {g.Notes && (
+                  <p className="text-yellow-400 italic">{g.Notes}</p>
+                )}
               </div>
             ))}
           </div>
@@ -390,6 +425,7 @@ const News = () => {
           ))}
         </div>
       </section>
+
 
       {/* Footer */}
       <footer className="mt-10 text-center">
