@@ -600,27 +600,37 @@ useEffect(() => {
                 <span className="inline-block text-xs font-semibold text-red-200 mt-2">✨NY Exclusive</span>
               </div>
             }
-            back={
-              <div className="bg-[#132044] rounded-xl shadow-2xl shadow-red-300/40 h-full flex flex-col items-center justify-center p-6 text-center border border-white/10">
-                <h4 className="text-md font-bold text-red-400 mb-2 drop-shadow-[0_0_8px_#ef4444]">
-                  Catch a Show!
-                </h4>
-                <p className="text-sm text-white/90 mb-3">
-                  Discover music, theater, dance, and more at Staller Center this season. Plan a date or just treat yourself!
-                </p>
-                <a
-                  href="https://www.stallercenter.com/Calendar.php"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition mb-2 shadow-lg drop-shadow-[0_0_10px_#ef4444]"
-                >
-                  See Shows & Get Tickets
-                </a>
-                <div className="mt-2 text-xs text-red-300 italic">
-                  Go score your tickets! We'll save your spot here! ❤️
-                </div>
-              </div>
-            }
+           back={
+  <div className="bg-[#132044] rounded-xl shadow-2xl shadow-red-300/40 h-full flex flex-col items-center justify-center p-6 text-center border border-white/10">
+    <h4 className="text-md font-bold text-red-400 mb-2 drop-shadow-[0_0_8px_#ef4444]">
+      Catch a Show!
+    </h4>
+    <p className="text-sm text-white/90 mb-3">
+      Discover music, theater, dance, and more at Staller Center this season. 
+      Plan a date or just treat yourself!
+    </p>
+
+    {/* Promo code highlight */}
+    <div className="bg-red-600/20 border border-red-400 text-red-300 font-bold px-3 py-2 rounded-lg mb-3">
+      🎟️ Use code <span className="text-white">TALKMORE</span> for 
+      <span className="text-yellow-300"> 20% off</span>
+    </div>
+
+    <a
+      href="https://www.stallercenter.com/Calendar.php"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition mb-2 shadow-lg drop-shadow-[0_0_10px_#ef4444]"
+    >
+      See Shows & Get Tickets
+    </a>
+
+    <div className="mt-2 text-xs text-red-300 italic">
+      Go score your tickets! We'll save your spot here! ❤️
+    </div>
+  </div>
+}
+
             disableFlipOnBack={true}
           />
         )}
