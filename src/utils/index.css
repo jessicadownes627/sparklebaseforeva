@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Bad+Script&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,9 +12,14 @@ body {
   animation: fadeIn 1.2s ease-out forwards;
 }
 
-/* Script font for titles */
+/* Script font for logo/title */
 .font-script {
   font-family: 'Bad Script', cursive;
+}
+
+/* Elegant font for topics/headings */
+.font-heading {
+  font-family: 'Playfair Display', serif;
 }
 
 /* Midnight blue custom text */
@@ -122,7 +128,7 @@ body {
   cursor: pointer;
   max-width: 360px;
   width: 100%;
-  min-height: 500px; /* updated from 420px to allow taller cards */
+  min-height: 500px;
   margin: auto;
   position: relative;
 }
@@ -163,10 +169,9 @@ body {
   transform: rotateY(180deg);
   background: white;
   color: #0a2540;
-  overflow-y: visible; /* allows full content to be shown without scroll */
+  overflow-y: visible;
 }
 
-/* Scroll container class (optional) */
 html, body {
   height: 100%;
   overflow-y: auto;

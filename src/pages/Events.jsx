@@ -210,12 +210,15 @@ useEffect(() => {
   return (
     <div className={`min-h-screen ${theme.bg} ${theme.text} px-6 pt-10 pb-32`}>
       <PageHeader />
-      <div className="text-center max-w-2xl mx-auto mb-10">
-        <h2 className="text-2xl font-light tracking-tight mb-2">
-          Thoughtfully designed just for you and {dateName}
-        </h2>
-        <p className="italic text-xl">🌟 Crafted with care — ready to shine 🌟</p>
-      </div>
+   <div className="text-center max-w-2xl mx-auto mb-10">
+  <h2 className={`text-2xl font-light tracking-tight mb-2 ${theme.text}`}>
+    Your date-night roadmap ❤️ — tailored to your city and your vibe. Ready to shine.
+  </h2>
+  <p className={`italic text-xl ${theme.text} opacity-90`}>
+    Every great night starts with a plan — here’s yours: perfectly matched to the moment ✨.
+  </p>
+</div>
+
       <div className="flex flex-wrap justify-center gap-6 mb-12">
 
         {/* ✨ Your Personalized Plan */}

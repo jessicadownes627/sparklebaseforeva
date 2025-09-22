@@ -34,9 +34,9 @@ const ESPN_SCHEDULES = {
 const cleanDescription = (text) => {
   if (!text) return "";
   return text
-    .replace(/<\/?[^>]+(>|$)/g, "") // strip HTML tags
-    .replace(/&[#\w]+;/g, "") // strip entities
-    .split(/(?<=[.!?])\s+/)[0]; // only first sentence
+    .replace(/<\/?[^>]+(>|$)/g, "")
+    .replace(/&[#\w]+;/g, "")
+    .split(/(?<=[.!?])\s+/)[0];
 };
 
 const renderAsk = (ask, dateName) =>
@@ -65,18 +65,16 @@ const dedupeAndTrim = (articles, max = 3, seenTitles = new Set()) => {
   return unique.slice(0, max);
 };
 
-// Custom date formatter for Big Games
 const formatDateRange = (d) => {
   if (!d) return "";
   if (/\d{4}-\d{2}-\d{2}T/.test(d)) {
-    // ISO timestamp → make readable
     return new Date(d).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   }
-  return d; // already a nice range like "Aug 1–Sept 1, 2025"
+  return d;
 };
 
 const News = () => {
@@ -188,7 +186,6 @@ const News = () => {
     ]);
   }, []);
 
-  // Sort Big Games chronologically
   const sortedBigGames = [...bigGames].sort((a, b) => {
     const da = new Date(a.date || a["Date(s)"]);
     const db = new Date(b.date || b["Date(s)"]);
@@ -198,47 +195,54 @@ const News = () => {
   return (
     <div className="px-4 sm:px-6 md:px-8 py-10 text-white bg-gradient-to-br from-black via-[#0f172a] to-[#312e81]">
       {/* Header */}
-      <header className="text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-script text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] mb-2">
-          Talk More Tonight
-        </h1>
-        <p className="text-gray-300 italic">Here’s the news for tonight…</p>
-      </header>
+     <header className="text-center mb-10">
+  <h1 className="text-4xl md:text-5xl font-script text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] mb-2">
+    Talk More Tonight
+  </h1>
+  <p className="text-gray-300 italic">Here’s the news for tonight…</p>
+  <p className="text-center text-sm text-gray-400 italic mt-3 max-w-3xl mx-auto">
+    What's glowing tonight? ✨ Custom-built from your picks — mixing live headlines,
+    big games, and trending sparks that change every night. Always fresh, always
+    date-worthy.
+  </p>
+</header>
+
 
       {/* TAPInto Spotlight */}
       {tapintoHeadlines.length > 0 && (
         <section className="relative rounded-2xl px-6 py-8 bg-[#0b1b34] shadow border border-white/20 max-w-5xl mx-auto mb-10">
-          <h3 className="text-2xl font-bold mb-4 text-center">🗞️ Top Headlines</h3>
+          <h3 className="text-2xl font-heading font-bold mb-4 text-center">🗞️ Top Headlines</h3>
           <TapIntoCard city={city} theme="dark" textColor="text-white" />
         </section>
       )}
 
       {/* LiveWire */}
       <section className="rounded-2xl px-6 py-8 bg-[#1a2333] shadow max-w-5xl mx-auto mb-10">
-        <h3 className="text-2xl font-bold mb-2">📰 Tonight’s Headlines</h3>
+        <h3 className="text-2xl font-heading font-bold mb-2">📰 Tonight’s Headlines</h3>
         <p className="text-gray-300 mb-6 italic">
-          Not every article will be a match — kinda like dating 😉
+          Some articles may not be a perfect match — kinda like dating 😉
         </p>
         {selectedTopics.map((topic) => {
           const live = dedupeAndTrim(liveHeadlines[topic], 3, seen);
           if (!live.length) return null;
           return (
             <div key={topic} className="mb-6">
-              <h4 className="text-lg font-semibold mb-2">
+              <h4 className="text-lg font-heading font-semibold mb-2">
                 {topicEmojiMap[topic]} {topic}
               </h4>
               {live.map((article, i) => (
                 <div key={i} className="bg-[#0d1423] p-4 rounded-md mb-3 shadow text-sm">
                   <div className="flex items-center flex-wrap gap-2 mb-1">
-                    <span
-                      className={`inline-block px-2 py-0.5 text-xs font-semibold rounded ${
-                        article.sourceType === "rss"
-                          ? "bg-green-600/80"
-                          : "bg-purple-600/80"
-                      }`}
-                    >
-                      {article.sourceType === "rss" ? "LIVE" : "CURATED"}
-                    </span>
+              <span
+  className={`inline-block px-2 py-0.5 text-xs font-semibold rounded shadow-md backdrop-blur-sm ${
+    article.sourceType === "rss"
+      ? "bg-green-500/30 text-green-200 border border-green-400/40"
+      : "bg-purple-500/30 text-purple-200 border border-purple-400/40"
+  }`}
+>
+  {article.sourceType === "rss" ? "⚡ LIVE" : "🌟 SPOTLIGHT"}
+</span>
+
                     {article.sourceType === "rss" ? (
                       <a
                         href={article.link}
@@ -267,21 +271,22 @@ const News = () => {
         })}
       </section>
 
+
       {/* Hot Sheet */}
       <section className="rounded-2xl px-6 py-8 bg-black shadow max-w-5xl mx-auto mb-10">
-        <h3 className="text-2xl font-bold mb-6 drop-shadow-glow">🔥 The Hot Sheet</h3>
+        <h3 className="text-2xl font-heading font-bold mb-6 drop-shadow-glow">🔥 The Hot Sheet</h3>
         {Object.keys(hotSheet).length > 0 ? (
           Object.entries(subtopicOptions).map(([topic, subs]) => {
             const validSubs = subs.filter((sub) => hotSheet[sub]);
             if (!validSubs.length) return null;
             return (
               <div key={topic} className="mb-10">
-                <h4 className="text-xl font-bold mb-4">
+                <h4 className="text-xl font-heading font-bold mb-4">
                   {topicEmojiMap[topic.replace(/ .*/, "")]} {topic}
                 </h4>
                 {validSubs.map((sub) => (
                   <details key={sub} className="mb-4 bg-[#111827] rounded-lg shadow">
-                    <summary className="cursor-pointer px-4 py-3 text-lg font-semibold hover:bg-[#1f2937] flex justify-between">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-heading font-semibold hover:bg-[#1f2937] flex justify-between">
                       <span>{sub}</span>
                       <span className="text-indigo-400 text-sm">Tap to expand ↓</span>
                     </summary>
@@ -332,17 +337,15 @@ const News = () => {
 
       {/* Sports + Deck + Brighter Side */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-10">
-
         {/* Sports */}
         <section className="rounded-2xl px-6 py-6 bg-[#1a1740] shadow">
           <h3 className="text-xl font-bold mb-4">🏟️ Tonight in Sports</h3>
           <ul className="space-y-2 mb-6">
-            <li><a href="https://www.espn.com/mlb/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">⚾ Baseball Schedule →</a></li>
-            <li><a href="https://www.espn.com/nfl/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏈 Football Schedule →</a></li>
-            <li><a href="https://www.espn.com/nba/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏀 Basketball Schedule →</a></li>
-            <li><a href="https://www.espn.com/nhl/schedule" target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏒 Hockey Schedule →</a></li>
+            <li><a href={ESPN_SCHEDULES.Baseball} target="_blank" rel="noreferrer" className="underline hover:text-blue-400">⚾ Baseball Schedule →</a></li>
+            <li><a href={ESPN_SCHEDULES.Football} target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏈 Football Schedule →</a></li>
+            <li><a href={ESPN_SCHEDULES.Basketball} target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏀 Basketball Schedule →</a></li>
+            <li><a href={ESPN_SCHEDULES.Hockey} target="_blank" rel="noreferrer" className="underline hover:text-blue-400">🏒 Hockey Schedule →</a></li>
           </ul>
-
           <h4 className="text-lg font-semibold mb-4">🏆 Big Games Ahead</h4>
           <div className="space-y-3">
             {sortedBigGames.slice(0, 4).map((g, i) => (
@@ -425,7 +428,6 @@ const News = () => {
           ))}
         </div>
       </section>
-
 
       {/* Footer */}
       <footer className="mt-10 text-center">
