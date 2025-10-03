@@ -36,9 +36,21 @@ const Welcome = () => {
     navigate("/build-your-night");
   };
 
+  // 🪄 NEW: Shortcut button skips straight to Topics page
+  const handleSkipToTopics = () => {
+    // Minimal data setup so Topics + News still work
+    setUserData({
+      userName: userName || "Friend",
+      dateName: dateName || "Your Date",
+      energy: energy || "Chill 🌙",
+      when: when || "Tonight",
+    });
+    navigate("/topics");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200 text-midnight flex flex-col justify-center items-center px-4 py-10">
-      {/* Keep your original header + subhead */}
+      {/* 📝 Header */}
       <h1 className="text-5xl font-script drop-shadow-glow text-center mb-2">
         Talk More Tonight
       </h1>
@@ -46,17 +58,18 @@ const Welcome = () => {
         ✨ Talk to us... before you talk to them. ✨
       </p>
 
+      {/* 🪄 Card */}
       <motion.div
         className="w-full max-w-md glass-card rounded-3xl px-6 py-8 backdrop-blur-md bg-white/30 shadow-xl border border-white/40 space-y-6"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        {/* Adventure tagline inside the card */}
         <p className="text-center text-sm italic text-gray-700 mb-2">
-          Welcome to Talk More Tonight ⭐️ Every choice you make shapes tonight’s adventure — never the same twice.
+          Welcome ⭐️ Every choice you make shapes tonight’s adventure — never the same twice.
         </p>
 
+        {/* ✍️ Inputs */}
         <input
           type="text"
           placeholder="Your name (e.g. Lorraine)"
@@ -72,6 +85,7 @@ const Welcome = () => {
           className="w-full p-3 rounded-xl border border-gray-300 bg-white/60 backdrop-blur-sm"
         />
 
+        {/* 📅 When */}
         <div>
           <p className="text-sm italic text-center opacity-70 mb-2">
             When is your date?
@@ -93,6 +107,7 @@ const Welcome = () => {
           </div>
         </div>
 
+        {/* 🌈 Energy */}
         <div>
           <p className="text-center mb-2 font-semibold">
             How are you feeling right now?
@@ -114,6 +129,7 @@ const Welcome = () => {
           </div>
         </div>
 
+        {/* 🚀 Start Journey */}
         <button
           onClick={handleStart}
           disabled={!isComplete}
@@ -126,7 +142,15 @@ const Welcome = () => {
           Let’s Talk
         </button>
 
-        {/* subtle, pretty disclaimer */}
+        {/* ✨ NEW Shortcut Button */}
+        <button
+          onClick={handleSkipToTopics}
+          className="w-full mt-2 px-4 py-2 text-sm font-semibold text-blue-700 bg-white/80 border border-blue-300 rounded-xl hover:bg-blue-100 transition"
+        >
+          💬 Already got plans? Shortcut to Tonight’s Topics →
+        </button>
+
+        {/* fine print */}
         <p className="text-[11px] text-center text-violet-600 mt-3 leading-snug">
           <span className="font-medium text-violet-700">Heads-up:</span>{" "}
           some news and topics may reference alcohol, gambling, or other{" "}
@@ -134,7 +158,7 @@ const Welcome = () => {
           <span className="underline decoration-dotted underline-offset-2">
             Take what serves you
           </span>
-          , skip what doesn’t. <span aria-hidden>💖</span>
+          , skip what doesn’t. 💖
         </p>
       </motion.div>
     </div>
